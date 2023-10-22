@@ -3,24 +3,49 @@ import Dialog from './Dialog';
 import { createDatabase, dropDatabase, createTable, dropTable, createIndex } from '../API';
 import './Menu.css';
 
-const Menu = ({ selectedNode }) => {
+const Menu = ({ data, selectedNode, onAction }) => {
 	const [type, setType] = useState(null);
 
 	const handleSubmit = (inputData) => {
 		switch (type) {
 			case 'CREATE_DATABASE':
-				return createDatabase(inputData);
+				return handleCreateDatabase(inputData);
 			case 'DROP_DATABASE':
-				return dropDatabase(inputData);
+				return handleDropDatabase(inputData);
 			case 'CREATE_TABLE':
-				return createTable(inputData);
+				return handleCreateTable(inputData);
 			case 'DROP_TABLE':
-				return dropTable(inputData);
+				return handleDropTable(inputData);
 			case 'CREATE_INDEX':
-				return createIndex(inputData);
+				return handleCreateIndex(inputData);
 			default:
 				return null;
 		}
+	};
+
+	const handleCreateDatabase = async (inputData) => {
+		await createDatabase(inputData);
+		onAction();
+	};
+
+	const handleDropDatabase = async (inputData) => {
+		await dropDatabase(inputData);
+		onAction();
+	};
+
+	const handleCreateTable = async (inputData) => {
+		await createTable(inputData);
+		onAction();
+	};
+
+	const handleDropTable = async (inputData) => {
+		await dropTable(inputData);
+		onAction();
+	};
+
+	const handleCreateIndex = async (inputData) => {
+		await createIndex(inputData);
+		onAction();
 	};
 
 	return (
@@ -33,7 +58,13 @@ const Menu = ({ selectedNode }) => {
 				<button onClick={() => setType('CREATE_INDEX')}>Create Index</button>
 			</div>
 			{type && (
-				<Dialog type={type} onSubmit={handleSubmit} onClose={() => setType(null)} selected={selectedNode} />
+				<Dialog
+					data={data}
+					type={type}
+					onSubmit={handleSubmit}
+					onClose={() => setType(null)}
+					selected={selectedNode}
+				/>
 			)}
 		</>
 	);

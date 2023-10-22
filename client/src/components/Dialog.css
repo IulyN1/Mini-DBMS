@@ -68,3 +68,8 @@
 	color: #666666;
 	cursor: default;
 }
+
+.dialogContent select {
+	font-size: 16px;
+	padding: 5px;
+}

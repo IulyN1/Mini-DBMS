@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { initialInputState } from '../utils';
 import './Dialog.css';
 
-const Dialog = ({ type, onSubmit, onClose, selected }) => {
+const Dialog = ({ data, type, onSubmit, onClose, selected }) => {
 	const renderContent = () => {
 		switch (type) {
 			case 'CREATE_DATABASE':
@@ -77,6 +77,23 @@ const Dialog = ({ type, onSubmit, onClose, selected }) => {
 		return (
 			<>
 				<h1>Create Table</h1>
+				<label htmlFor="dbPicker">Database: </label>
+				<select
+					id="dbPicker"
+					value={inputState.dbName}
+					onChange={(e) => setInputState({ ...inputState, dbName: e.target.value })}
+				>
+					<option key="defaultOption" value={'placeholder'} disabled>
+						Select a database
+					</option>
+					{data?.databases?.map((db) => (
+						<option key={db.name} value={db.name}>
+							{db.name}
+						</option>
+					))}
+				</select>
+				<br />
+				<br />
 				<label htmlFor="createTableName">Table Name: </label>
 				<input
 					id="createTableName"
@@ -86,7 +103,10 @@ const Dialog = ({ type, onSubmit, onClose, selected }) => {
 					value={inputState.name}
 					onChange={(e) => setInputState({ ...inputState, name: e.target.value })}
 				/>
-				<button onClick={() => handleSubmit(inputState)} disabled={!inputState.name}>
+				<button
+					onClick={() => handleSubmit(inputState)}
+					disabled={!inputState.name || inputState.dbName === 'placeholder'}
+				>
 					Submit
 				</button>
 			</>
@@ -101,6 +121,23 @@ const Dialog = ({ type, onSubmit, onClose, selected }) => {
 		return (
 			<>
 				<h1>Drop Table</h1>
+				<label htmlFor="dbPicker">Database: </label>
+				<select
+					id="dbPicker"
+					value={inputState.dbName}
+					onChange={(e) => setInputState({ ...inputState, dbName: e.target.value })}
+				>
+					<option key="defaultOption" value={'placeholder'} disabled>
+						Select a database
+					</option>
+					{data?.databases?.map((db) => (
+						<option key={db.name} value={db.name}>
+							{db.name}
+						</option>
+					))}
+				</select>
+				<br />
+				<br />
 				<label htmlFor="dropTableName">Table Name: </label>
 				<input
 					id="dropTableName"
@@ -110,7 +147,10 @@ const Dialog = ({ type, onSubmit, onClose, selected }) => {
 					value={inputState.name}
 					onChange={(e) => setInputState({ ...inputState, name: e.target.value })}
 				/>
-				<button onClick={() => handleSubmit(inputState)} disabled={!inputState.name}>
+				<button
+					onClick={() => handleSubmit(inputState)}
+					disabled={!inputState.name || inputState.dbName === 'placeholder'}
+				>
 					Submit
 				</button>
 			</>
@@ -123,6 +163,42 @@ const Dialog = ({ type, onSubmit, onClose, selected }) => {
 		return (
 			<>
 				<h1>Create Index</h1>
+				<label htmlFor="dbPicker">Database: </label>
+				<select
+					id="dbPicker"
+					value={inputState.dbName}
+					onChange={(e) => setInputState({ ...inputState, dbName: e.target.value })}
+				>
+					<option key="defaultOption" value={'placeholder'} disabled>
+						Select a database
+					</option>
+					{data?.databases?.map((db) => (
+						<option key={db.name} value={db.name}>
+							{db.name}
+						</option>
+					))}
+				</select>
+				<br />
+				<br />
+				<label htmlFor="tbPicker">Table: </label>
+				<select
+					id="tbPicker"
+					value={inputState.tbName}
+					onChange={(e) => setInputState({ ...inputState, tbName: e.target.value })}
+				>
+					<option key="defaultOption" value={'placeholder'} disabled>
+						Select a table
+					</option>
+					{data?.databases
+						?.find((el) => el.name === inputState.dbName)
+						?.tables?.map((tb) => (
+							<option key={tb.name} value={tb.name}>
+								{tb.name}
+							</option>
+						))}
+				</select>
+				<br />
+				<br />
 				<label htmlFor="createIndexName">Index Name: </label>
 				<input
 					id="createIndexName"
@@ -132,7 +208,12 @@ const Dialog = ({ type, onSubmit, onClose, selected }) => {
 					value={inputState.name}
 					onChange={(e) => setInputState({ ...inputState, name: e.target.value })}
 				/>
-				<button onClick={() => handleSubmit(inputState)} disabled={!inputState.name}>
+				<button
+					onClick={() => handleSubmit(inputState)}
+					disabled={
+						!inputState.name || inputState.dbName === 'placeholder' || inputState.tbName === 'placeholder'
+					}
+				>
 					Submit
 				</button>
 			</>

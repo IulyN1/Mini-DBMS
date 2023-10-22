@@ -8,6 +8,7 @@ import './App.css';
 
 function App() {
 	const [selectedNode, setSelectedNode] = useState(null);
+	const [operationsDone, setOperationsDone] = useState(0);
 	const [data, setData] = useState(initialData);
 
 	useEffect(() => {
@@ -15,7 +16,7 @@ function App() {
 			const response = await getData();
 			setData(response);
 		})();
-	}, []);
+	}, [operationsDone]);
 
 	const handleNodeSelect = (node) => {
 		setSelectedNode(node);
@@ -23,7 +24,7 @@ function App() {
 
 	return (
 		<>
-			<Menu selectedNode={selectedNode} />
+			<Menu data={data} selectedNode={selectedNode} onAction={() => setOperationsDone(operationsDone + 1)} />
 			<div className="data">
 				<TreeView data={data} selectedNode={selectedNode} onSelect={handleNodeSelect} />
 				<DataView />

@@ -4,28 +4,16 @@
 			"name": "Database 1",
 			"type": "database",
 			"tables": [
-				{
-					"name": "Table 1",
-					"type": "table"
-				},
-				{
-					"name": "Table 2",
-					"type": "table"
-				}
+				{ "name": "Table 1", "type": "table", "columns": [], "indexes": [] },
+				{ "name": "Table 2", "type": "table", "columns": [], "indexes": [] }
 			]
 		},
 		{
 			"name": "Database 2",
 			"type": "database",
 			"tables": [
-				{
-					"name": "Table 3",
-					"type": "table"
-				},
-				{
-					"name": "Table 4",
-					"type": "table"
-				}
+				{ "name": "Table 3", "type": "table", "columns": [], "indexes": [] },
+				{ "name": "Table 4", "type": "table", "columns": [], "indexes": [] }
 			]
 		}
 	]

@@ -11,10 +11,9 @@ app.use(
 	})
 );
 
-const catalog = require('./catalog.json');
 const services = require('./services');
 
-app.get('/', (_, res) => res.json(catalog));
+app.get('/', services.getData);
 app.post('/database', services.createDatabase);
 app.delete('/database/:name', services.dropDatabase);
 app.post('/table', services.createTable);

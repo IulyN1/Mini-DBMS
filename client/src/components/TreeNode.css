@@ -1,0 +1,17 @@
+.treeList {
+	list-style: none;
+	cursor: pointer;
+	font-size: 18px;
+	margin: 0;
+	width: fit-content;
+}
+
+.treeList li {
+	padding: 5px;
+}
+
+.treeList span {
+	font-weight: bold;
+	font-style: italic;
+	background-color: aquamarine;
+}

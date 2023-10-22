@@ -1,25 +1,25 @@
-import logo from './logo.svg';
+import { useState } from 'react';
+import Menu from './components/Menu';
+import TreeView from './components/TreeView';
+import DataView from './components/DataView';
 import './App.css';
 
 function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+	const [selectedNode, setSelectedNode] = useState(null);
+
+	const handleNodeSelect = (node) => {
+		setSelectedNode(node);
+	};
+
+	return (
+		<>
+			<Menu selectedNode={selectedNode} />
+			<div className="data">
+				<TreeView selectedNode={selectedNode} onSelect={handleNodeSelect} />
+				<DataView />
+			</div>
+		</>
+	);
 }
 
 export default App;

@@ -15,7 +15,7 @@
 	margin: auto;
 	padding: 20px;
 	border: 1px solid #888;
-	width: 50%;
+	width: 30%;
 }
 
 .close {
@@ -30,4 +30,33 @@
 	color: #000;
 	text-decoration: none;
 	cursor: pointer;
+}
+
+.dialogContent label {
+	cursor: pointer;
+	font-size: 16px;
+}
+
+.dialogContent input {
+	font-size: 16px;
+	padding: 5px;
+}
+
+.dialogContent button {
+	background-color: dodgerblue;
+	color: white;
+	border: none;
+	font-size: 18px;
+	border-radius: 10px;
+	padding: 10px;
+	display: block;
+	margin-top: 20px;
+	font-weight: bold;
+	border: 2px solid dodgerblue;
+}
+
+.dialogContent button:hover {
+	cursor: pointer;
+	background-color: #339aff;
+	border: 2px solid black;
 }

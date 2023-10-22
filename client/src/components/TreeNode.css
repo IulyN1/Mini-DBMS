@@ -9,3 +9,9 @@
 .treeList li {
 	padding: 5px;
 }
+
+.treeList span {
+	font-weight: bold;
+	font-style: italic;
+	background-color: aquamarine;
+}

@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import './TreeNode.css';
 
-const TreeNode = ({ node }) => {
+const TreeNode = ({ node, onSelect, selectedNode }) => {
 	const [isExpanded, setIsExpanded] = useState(false);
 
 	const handleToggle = () => {
 		setIsExpanded(!isExpanded);
+		onSelect(node);
 	};
 
 	return (
@@ -27,9 +28,12 @@ const TreeNode = ({ node }) => {
 					) : (
 						<img src="images/table.png" alt="table" />
 					)}{' '}
-					{node.name}
+					{node === selectedNode ? <span>{node.name}</span> : node.name}
 				</div>
-				{isExpanded && node?.tables?.map((child) => <TreeNode node={child} key={child.id} />)}
+				{isExpanded &&
+					node?.tables?.map((child) => (
+						<TreeNode node={child} key={child.id} onSelect={onSelect} selectedNode={selectedNode} />
+					))}
 			</li>
 		</ul>
 	);

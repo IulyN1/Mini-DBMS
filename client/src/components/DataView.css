@@ -1,0 +1,4 @@
+.dataViewContainer {
+	display: flex;
+	flex-direction: column;
+}

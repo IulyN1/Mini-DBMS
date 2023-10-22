@@ -3,32 +3,31 @@ import { initialInputState } from '../utils';
 import './Dialog.css';
 
 const Dialog = ({ type, onSubmit, onClose, selected }) => {
-	const [inputState, setInputState] = useState(initialInputState);
-
 	const renderContent = () => {
 		switch (type) {
 			case 'CREATE_DATABASE':
-				return renderCreateDatabaseModal();
+				return RenderCreateDatabaseModal(handleSubmit);
 			case 'DROP_DATABASE':
-				return renderDropDatabaseModal();
+				return RenderDropDatabaseModal(handleSubmit, selected);
 			case 'CREATE_TABLE':
-				return renderCreateTableModal();
+				return RenderCreateTableModal(handleSubmit);
 			case 'DROP_TABLE':
-				return renderDropTableModal();
+				return RenderDropTableModal(handleSubmit, selected);
 			case 'CREATE_INDEX':
-				return renderCreateIndexModal();
+				return RenderCreateIndexModal(handleSubmit);
 			default:
 				return null;
 		}
 	};
 
-	const handleSubmit = () => {
-		onSubmit(inputState);
-		setInputState(initialInputState);
+	const handleSubmit = (state) => {
+		onSubmit(state);
 		onClose();
 	};
 
-	const renderCreateDatabaseModal = () => {
+	const RenderCreateDatabaseModal = (handleSubmit) => {
+		const [inputState, setInputState] = useState(initialInputState);
+
 		return (
 			<>
 				<h1>Create Database</h1>
@@ -36,15 +35,23 @@ const Dialog = ({ type, onSubmit, onClose, selected }) => {
 				<input
 					id="createDatabase"
 					type="text"
+					autoComplete="off"
+					spellCheck={false}
 					value={inputState.name}
 					onChange={(e) => setInputState({ ...inputState, name: e.target.value })}
 				/>
-				<button onClick={handleSubmit}>Submit</button>
+				<button onClick={() => handleSubmit(inputState)} disabled={!inputState.name}>
+					Submit
+				</button>
 			</>
 		);
 	};
 
-	const renderDropDatabaseModal = () => {
+	const RenderDropDatabaseModal = (handleSubmit, selected) => {
+		const [inputState, setInputState] = useState(
+			selected?.type === 'database' ? { ...initialInputState, name: selected.name } : initialInputState
+		);
+
 		return (
 			<>
 				<h1>Drop Database</h1>
@@ -52,15 +59,21 @@ const Dialog = ({ type, onSubmit, onClose, selected }) => {
 				<input
 					id="dropDatabase"
 					type="text"
-					defaultValue={selected?.type === 'database' ? selected.name : ''}
+					autoComplete="off"
+					spellCheck={false}
+					value={inputState.name}
 					onChange={(e) => setInputState({ ...inputState, name: e.target.value })}
 				/>
-				<button onClick={handleSubmit}>Submit</button>
+				<button onClick={() => handleSubmit(inputState)} disabled={!inputState.name}>
+					Submit
+				</button>
 			</>
 		);
 	};
 
-	const renderCreateTableModal = () => {
+	const RenderCreateTableModal = (handleSubmit) => {
+		const [inputState, setInputState] = useState(initialInputState);
+
 		return (
 			<>
 				<h1>Create Table</h1>
@@ -68,15 +81,23 @@ const Dialog = ({ type, onSubmit, onClose, selected }) => {
 				<input
 					id="createTableName"
 					type="text"
+					autoComplete="off"
+					spellCheck={false}
 					value={inputState.name}
 					onChange={(e) => setInputState({ ...inputState, name: e.target.value })}
 				/>
-				<button onClick={handleSubmit}>Submit</button>
+				<button onClick={() => handleSubmit(inputState)} disabled={!inputState.name}>
+					Submit
+				</button>
 			</>
 		);
 	};
 
-	const renderDropTableModal = () => {
+	const RenderDropTableModal = (handleSubmit, selected) => {
+		const [inputState, setInputState] = useState(
+			selected?.type === 'table' ? { ...initialInputState, name: selected.name } : initialInputState
+		);
+
 		return (
 			<>
 				<h1>Drop Table</h1>
@@ -84,21 +105,36 @@ const Dialog = ({ type, onSubmit, onClose, selected }) => {
 				<input
 					id="dropTableName"
 					type="text"
-					defaultValue={selected?.type === 'table' ? selected.name : ''}
+					autoComplete="off"
+					spellCheck={false}
+					value={inputState.name}
 					onChange={(e) => setInputState({ ...inputState, name: e.target.value })}
 				/>
-				<button onClick={handleSubmit}>Submit</button>
+				<button onClick={() => handleSubmit(inputState)} disabled={!inputState.name}>
+					Submit
+				</button>
 			</>
 		);
 	};
 
-	const renderCreateIndexModal = () => {
+	const RenderCreateIndexModal = (handleSubmit) => {
+		const [inputState, setInputState] = useState(initialInputState);
+
 		return (
 			<>
 				<h1>Create Index</h1>
 				<label htmlFor="createIndexName">Index Name: </label>
-				<input id="createIndexName" type="text" />
-				<button onClick={handleSubmit}>Submit</button>
+				<input
+					id="createIndexName"
+					type="text"
+					autoComplete="off"
+					spellCheck={false}
+					value={inputState.name}
+					onChange={(e) => setInputState({ ...inputState, name: e.target.value })}
+				/>
+				<button onClick={() => handleSubmit(inputState)} disabled={!inputState.name}>
+					Submit
+				</button>
 			</>
 		);
 	};

@@ -1,0 +1,32 @@
+{
+	"databases": [
+		{
+			"name": "Database 1",
+			"type": "database",
+			"tables": [
+				{
+					"name": "Table 1",
+					"type": "table"
+				},
+				{
+					"name": "Table 2",
+					"type": "table"
+				}
+			]
+		},
+		{
+			"name": "Database 2",
+			"type": "database",
+			"tables": [
+				{
+					"name": "Table 3",
+					"type": "table"
+				},
+				{
+					"name": "Table 4",
+					"type": "table"
+				}
+			]
+		}
+	]
+}

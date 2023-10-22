@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Dialog from './Dialog';
+import { createDatabase, dropDatabase, createTable, dropTable, createIndex } from '../API';
 import './Menu.css';
 
 const Menu = ({ selectedNode }) => {
@@ -8,15 +9,15 @@ const Menu = ({ selectedNode }) => {
 	const handleSubmit = (inputData) => {
 		switch (type) {
 			case 'CREATE_DATABASE':
-				return 1;
+				return createDatabase(inputData);
 			case 'DROP_DATABASE':
-				return 2;
+				return dropDatabase(inputData);
 			case 'CREATE_TABLE':
-				return 3;
+				return createTable(inputData);
 			case 'DROP_TABLE':
-				return 4;
+				return dropTable(inputData);
 			case 'CREATE_INDEX':
-				return 5;
+				return createIndex(inputData);
 			default:
 				return null;
 		}

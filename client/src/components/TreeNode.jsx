@@ -32,7 +32,7 @@ const TreeNode = ({ node, onSelect, selectedNode }) => {
 				</div>
 				{isExpanded &&
 					node?.tables?.map((child) => (
-						<TreeNode node={child} key={child.id} onSelect={onSelect} selectedNode={selectedNode} />
+						<TreeNode key={child.name} node={child} onSelect={onSelect} selectedNode={selectedNode} />
 					))}
 			</li>
 		</ul>

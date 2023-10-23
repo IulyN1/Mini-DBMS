@@ -1,0 +1,40 @@
+.notification {
+	font-weight: bold;
+	font-size: 16px;
+	text-align: center;
+	position: fixed;
+	z-index: 1;
+	margin-bottom: 20px;
+	bottom: 0;
+	left: 50%;
+	transform: translate(-50%);
+	width: 200px;
+	width: fit-content;
+}
+
+.success {
+	padding: 25px;
+	background-color: limegreen;
+	border-radius: 10px;
+}
+
+.error {
+	padding: 25px;
+	background-color: red;
+	border-radius: 10px;
+}
+
+.closeBtn {
+	color: black;
+	font-size: 22px;
+	position: absolute;
+	top: 0;
+	right: 10px;
+}
+
+.closeBtn:hover,
+.closeBtn:focus {
+	color: white;
+	text-decoration: none;
+	cursor: pointer;
+}

@@ -1,13 +1,12 @@
 import TreeNode from './TreeNode';
-import { data } from '../utils';
 import './TreeView.css';
 
-const TreeView = ({ selectedNode, onSelect }) => {
+const TreeView = ({ data, selectedNode, onSelect }) => {
 	return (
 		<div className="treeView">
 			<h3>Object Explorer</h3>
 			{data?.databases?.map((node) => (
-				<TreeNode key={node.id} node={node} onSelect={onSelect} selectedNode={selectedNode} />
+				<TreeNode key={node.name} node={node} onSelect={onSelect} selectedNode={selectedNode} />
 			))}
 		</div>
 	);

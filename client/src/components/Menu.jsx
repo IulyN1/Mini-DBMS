@@ -1,25 +1,58 @@
 import { useState } from 'react';
 import Dialog from './Dialog';
+import Notification from './Notification';
+import { createDatabase, dropDatabase, createTable, dropTable, createIndex } from '../API';
 import './Menu.css';
 
-const Menu = ({ selectedNode }) => {
+const Menu = ({ data, selectedNode, onAction }) => {
 	const [type, setType] = useState(null);
+	const [response, setResponse] = useState(null);
 
 	const handleSubmit = (inputData) => {
 		switch (type) {
 			case 'CREATE_DATABASE':
-				return 1;
+				return handleCreateDatabase(inputData);
 			case 'DROP_DATABASE':
-				return 2;
+				return handleDropDatabase(inputData);
 			case 'CREATE_TABLE':
-				return 3;
+				return handleCreateTable(inputData);
 			case 'DROP_TABLE':
-				return 4;
+				return handleDropTable(inputData);
 			case 'CREATE_INDEX':
-				return 5;
+				return handleCreateIndex(inputData);
 			default:
 				return null;
 		}
+	};
+
+	const handleCreateDatabase = async (inputData) => {
+		const res = await createDatabase(inputData);
+		setResponse(res);
+		onAction();
+	};
+
+	const handleDropDatabase = async (inputData) => {
+		const res = await dropDatabase(inputData);
+		setResponse(res);
+		onAction();
+	};
+
+	const handleCreateTable = async (inputData) => {
+		const res = await createTable(inputData);
+		setResponse(res);
+		onAction();
+	};
+
+	const handleDropTable = async (inputData) => {
+		const res = await dropTable(inputData);
+		setResponse(res);
+		onAction();
+	};
+
+	const handleCreateIndex = async (inputData) => {
+		const res = await createIndex(inputData);
+		setResponse(res);
+		onAction();
 	};
 
 	return (
@@ -32,8 +65,15 @@ const Menu = ({ selectedNode }) => {
 				<button onClick={() => setType('CREATE_INDEX')}>Create Index</button>
 			</div>
 			{type && (
-				<Dialog type={type} onSubmit={handleSubmit} onClose={() => setType(null)} selected={selectedNode} />
+				<Dialog
+					data={data}
+					type={type}
+					onSubmit={handleSubmit}
+					onClose={() => setType(null)}
+					selected={selectedNode}
+				/>
 			)}
+			{response && <Notification response={response} onClose={() => setResponse(null)} />}
 		</>
 	);
 };

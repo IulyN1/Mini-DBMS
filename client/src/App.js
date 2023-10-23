@@ -1,11 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Menu from './components/Menu';
 import TreeView from './components/TreeView';
 import DataView from './components/DataView';
+import { getData } from './API';
+import { initialData } from './utils';
 import './App.css';
 
 function App() {
 	const [selectedNode, setSelectedNode] = useState(null);
+	const [operationsDone, setOperationsDone] = useState(0);
+	const [data, setData] = useState(initialData);
+
+	useEffect(() => {
+		(async () => {
+			const response = await getData();
+			setData(response);
+		})();
+	}, [operationsDone]);
 
 	const handleNodeSelect = (node) => {
 		setSelectedNode(node);
@@ -13,9 +24,9 @@ function App() {
 
 	return (
 		<>
-			<Menu selectedNode={selectedNode} />
+			<Menu data={data} selectedNode={selectedNode} onAction={() => setOperationsDone(operationsDone + 1)} />
 			<div className="data">
-				<TreeView selectedNode={selectedNode} onSelect={handleNodeSelect} />
+				<TreeView data={data} selectedNode={selectedNode} onSelect={handleNodeSelect} />
 				<DataView />
 			</div>
 		</>

@@ -1,0 +1,43 @@
+{
+	"databases": [
+		{
+			"name": "Database 1",
+			"type": "database",
+			"tables": [
+				{
+					"name": "Table 1",
+					"type": "table",
+					"columns": [{ "name": "id", "type": "int" }],
+					"primaryKey": ["id"],
+					"indexes": [{ "name": "PrimaryKeyIndex", "columns": ["id"] }]
+				},
+				{
+					"name": "Table 2",
+					"type": "table",
+					"columns": [
+						{ "name": "id", "type": "int" },
+						{ "name": "description", "type": "string" }
+					],
+					"primaryKey": ["id", "description"],
+					"indexes": [
+						{ "name": "PrimaryKeyIndex", "columns": ["id", "description"] },
+						{ "name": "SingleIndex", "columns": ["id"] }
+					]
+				}
+			]
+		},
+		{
+			"name": "Database 2",
+			"type": "database",
+			"tables": [
+				{
+					"name": "Table 1",
+					"type": "table",
+					"columns": [{ "name": "id", "type": "int" }],
+					"primaryKey": ["id"],
+					"indexes": [{ "name": "PrimaryKeyIndex", "columns": ["id"] }]
+				}
+			]
+		}
+	]
+}

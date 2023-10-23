@@ -60,3 +60,60 @@
 	background-color: #339aff;
 	border: 2px solid black;
 }
+
+.dialogContent button:disabled,
+.dialogContent button[disabled] {
+	border: 2px solid #999999;
+	background-color: #cccccc;
+	color: #666666;
+	cursor: default;
+}
+
+.dialogContent select {
+	font-size: 16px;
+	padding: 5px;
+}
+
+.columnHeader {
+	display: flex;
+	justify-content: space-between;
+	margin-bottom: 10px;
+	margin-right: 20px;
+}
+
+.columnOption {
+	display: flex;
+	justify-content: space-between;
+	margin-bottom: 5px;
+}
+
+.columnOption input[type='checkbox'] {
+	width: 16px;
+}
+
+.columnOption input[type='text'] {
+	width: 200px;
+}
+
+button.plusButton {
+	background-color: green;
+	padding: 5px 8px;
+	border: none;
+	font-size: 20px;
+}
+
+button.plusButton:hover,
+button.plusButton:focus {
+	background-color: darkgreen;
+	border: none;
+}
+
+.indexColumnOption {
+	display: flex;
+	font-size: 16px;
+}
+
+.indexColumnOption input[type='checkbox'] {
+	width: 16px;
+	margin-right: 10px;
+}

@@ -43,7 +43,7 @@ const createDatabase = (req, res) => {
 						return res.status(200).send('Database was created successfully!');
 					});
 				} else {
-					return res.status(400).send('Database already exists!');
+					return res.status(402).send('Database already exists!');
 				}
 			} catch (error) {
 				console.error('Error parsing JSON:', error);
@@ -95,7 +95,8 @@ const dropDatabase = (req, res) => {
 const createTable = (req, res) => {
 	const name = toUpper(req.body?.name);
 	const dbName = toUpper(req.body?.dbName);
-	if (name && dbName) {
+	const columns = req.body?.columns;
+	if (name && dbName && columns) {
 		fs.readFile(filePath, 'utf8', (err, data) => {
 			if (err) {
 				console.error('Error reading file:', err);
@@ -107,20 +108,42 @@ const createTable = (req, res) => {
 				const db = catalog.databases.find((el) => el.name === dbName);
 				if (db) {
 					if (isUnique(db.tables, name)) {
-						catalog.databases
-							.find((el) => el.name === dbName)
-							.tables.push({ name, type: 'table', columns: [], indexes: [] });
-
-						fs.writeFile(filePath, JSON.stringify(catalog), (err) => {
-							if (err) {
-								console.error('Error writing file:', err);
-								return res.status(500).send('Error writing file');
+						let tableColumns = [];
+						let primaryKey = [];
+						columns?.forEach((column) => {
+							if (column.primaryKey && column.name) {
+								primaryKey.push(column.name);
 							}
-
-							return res.status(200).send('Table was created successfully!');
+							if (column.name) {
+								tableColumns.push({ name: column.name, type: column.type });
+							}
 						});
+						if (tableColumns.length === 0) {
+							return res.status(400).send('Invalid columns');
+						} else if (primaryKey.length === 0) {
+							return res.status(400).send('Invalid primary key');
+						} else {
+							catalog.databases
+								.find((el) => el.name === dbName)
+								.tables.push({
+									name,
+									type: 'table',
+									columns: tableColumns,
+									primaryKey,
+									indexes: [{ name: 'PrimaryKeyIndex', columns: primaryKey }]
+								});
+
+							fs.writeFile(filePath, JSON.stringify(catalog), (err) => {
+								if (err) {
+									console.error('Error writing file:', err);
+									return res.status(500).send('Error writing file');
+								}
+
+								return res.status(200).send('Table was created successfully!');
+							});
+						}
 					} else {
-						return res.status(400).send('Table already exists!');
+						return res.status(402).send('Table already exists!');
 					}
 				} else {
 					return res.status(404).send('Database not found!');
@@ -136,7 +159,7 @@ const createTable = (req, res) => {
 };
 
 const dropTable = (req, res) => {
-	const name = toUpper(req.body?.name);
+	const name = toUpper(req.params?.name);
 	const dbName = toUpper(req.body?.dbName);
 	if (name && dbName) {
 		fs.readFile(filePath, 'utf8', (err, data) => {
@@ -182,7 +205,8 @@ const createIndex = (req, res) => {
 	const name = toUpper(req.body?.name);
 	const dbName = toUpper(req.body?.dbName);
 	const tbName = toUpper(req.body?.tbName);
-	if (name && dbName && tbName) {
+	const indexColumnNames = req.body?.indexColumnNames;
+	if (name && dbName && tbName && indexColumnNames) {
 		fs.readFile(filePath, 'utf8', (err, data) => {
 			if (err) {
 				console.error('Error reading file:', err);
@@ -193,24 +217,28 @@ const createIndex = (req, res) => {
 				const catalog = JSON.parse(data);
 				const db = catalog.databases.find((el) => el.name === dbName);
 				if (db) {
-					const table = db.tables.find((el) => el.name === name);
+					const table = db.tables.find((el) => el.name === tbName);
 					if (table) {
 						if (isUnique(table.indexes, name)) {
-							catalog.databases
-								.find((el) => el.name === dbName)
-								.tables.find((el) => el.name === tbName)
-								.push({ name, type: 'index' });
+							if (indexColumnNames.length === 0) {
+								return res.status(400).send('Invalid columns for index!');
+							} else {
+								catalog.databases
+									.find((el) => el.name === dbName)
+									.tables.find((el) => el.name === tbName)
+									.indexes.push({ name, columns: indexColumnNames });
 
-							fs.writeFile(filePath, JSON.stringify(catalog), (err) => {
-								if (err) {
-									console.error('Error writing file:', err);
-									return res.status(500).send('Error writing file');
-								}
+								fs.writeFile(filePath, JSON.stringify(catalog), (err) => {
+									if (err) {
+										console.error('Error writing file:', err);
+										return res.status(500).send('Error writing file');
+									}
 
-								return res.status(200).send('Index was created successfully!');
-							});
+									return res.status(200).send('Index was created successfully!');
+								});
+							}
 						} else {
-							return res.status(400).send('Index already exists!');
+							return res.status(402).send('Index already exists!');
 						}
 					} else {
 						return res.status(404).send('Table not found!');

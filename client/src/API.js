@@ -29,12 +29,14 @@ export const dropDatabase = async (data) => {
 export const createTable = async (data) => {
 	const name = data?.name;
 	const dbName = data?.dbName;
-	if (name && dbName) {
+	const columns = data?.columns;
+	if (name && dbName && columns) {
 		return await fetch(`${baseURL}table`, {
 			method: 'POST',
 			body: JSON.stringify({
 				name,
-				dbName
+				dbName,
+				columns
 			}),
 			headers: {
 				'Content-Type': 'application/json'
@@ -63,13 +65,15 @@ export const createIndex = async (data) => {
 	const name = data?.name;
 	const dbName = data?.dbName;
 	const tbName = data?.tbName;
-	if (name && dbName && tbName) {
+	const indexColumnNames = data?.indexColumnNames;
+	if (name && dbName && tbName && indexColumnNames) {
 		return await fetch(`${baseURL}index`, {
 			method: 'POST',
 			body: JSON.stringify({
 				name,
 				dbName,
-				tbName
+				tbName,
+				indexColumnNames
 			}),
 			headers: {
 				'Content-Type': 'application/json'

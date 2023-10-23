@@ -18,14 +18,13 @@ const isUnique = (arr, name) => {
 };
 
 /**
- * Capitalizes first letter of a word and transforms the rest of it to lowercase
+ * Capitalizes first letter of a word
  * @param {String} word - the word to be transformed
  * @returns {String} - the transformed text
  */
 const toUpper = (word) => {
-	const string = word?.toLowerCase();
-	if (string) {
-		return string.charAt(0).toUpperCase() + string.slice(1);
+	if (word) {
+		return word.charAt(0).toUpperCase() + word.slice(1);
 	}
 	return '';
 };

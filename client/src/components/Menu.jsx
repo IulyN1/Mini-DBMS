@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import Dialog from './Dialog';
+import Notification from './Notification';
 import { createDatabase, dropDatabase, createTable, dropTable, createIndex } from '../API';
 import './Menu.css';
 
 const Menu = ({ data, selectedNode, onAction }) => {
 	const [type, setType] = useState(null);
+	const [response, setResponse] = useState(null);
 
 	const handleSubmit = (inputData) => {
 		switch (type) {
@@ -24,27 +26,32 @@ const Menu = ({ data, selectedNode, onAction }) => {
 	};
 
 	const handleCreateDatabase = async (inputData) => {
-		await createDatabase(inputData);
+		const res = await createDatabase(inputData);
+		setResponse(res);
 		onAction();
 	};
 
 	const handleDropDatabase = async (inputData) => {
-		await dropDatabase(inputData);
+		const res = await dropDatabase(inputData);
+		setResponse(res);
 		onAction();
 	};
 
 	const handleCreateTable = async (inputData) => {
-		await createTable(inputData);
+		const res = await createTable(inputData);
+		setResponse(res);
 		onAction();
 	};
 
 	const handleDropTable = async (inputData) => {
-		await dropTable(inputData);
+		const res = await dropTable(inputData);
+		setResponse(res);
 		onAction();
 	};
 
 	const handleCreateIndex = async (inputData) => {
-		await createIndex(inputData);
+		const res = await createIndex(inputData);
+		setResponse(res);
 		onAction();
 	};
 
@@ -66,6 +73,7 @@ const Menu = ({ data, selectedNode, onAction }) => {
 					selected={selectedNode}
 				/>
 			)}
+			{response && <Notification response={response} onClose={() => setResponse(null)} />}
 		</>
 	);
 };

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { initialInputState, types } from '../utils';
+import { initialInputState, dataTypes, constraintTypes } from '../utils';
 import './Dialog.css';
 
 const Dialog = ({ data, type, onSubmit, onClose, selected }) => {
@@ -15,6 +15,8 @@ const Dialog = ({ data, type, onSubmit, onClose, selected }) => {
 				return RenderDropTableModal(handleSubmit, selected);
 			case 'CREATE_INDEX':
 				return RenderCreateIndexModal(handleSubmit);
+			case 'ADD_CONSTRAINT':
+				return RenderAddConstraintModal(handleSubmit);
 			default:
 				return null;
 		}
@@ -148,7 +150,7 @@ const Dialog = ({ data, type, onSubmit, onClose, selected }) => {
 								});
 							}}
 						>
-							{types.map((type) => (
+							{dataTypes.map((type) => (
 								<option key={type} value={type}>
 									{type}
 								</option>
@@ -318,6 +320,203 @@ const Dialog = ({ data, type, onSubmit, onClose, selected }) => {
 					onClick={() => handleSubmit(inputState)}
 					disabled={
 						!inputState.name || inputState.dbName === 'placeholder' || inputState.tbName === 'placeholder'
+					}
+				>
+					Submit
+				</button>
+			</>
+		);
+	};
+
+	const RenderAddConstraintModal = (handleSubmit) => {
+		const [inputState, setInputState] = useState(initialInputState);
+
+		return (
+			<>
+				<h1>Add Constraint</h1>
+				<label htmlFor="dbPicker">Database: </label>
+				<select
+					id="dbPicker"
+					value={inputState.constraint.dbName}
+					onChange={(e) =>
+						setInputState({
+							...inputState,
+							constraint: { ...inputState.constraint, dbName: e.target.value }
+						})
+					}
+				>
+					<option key="defaultOption" value={'placeholder'} disabled>
+						Select a database
+					</option>
+					{data?.databases?.map((db) => (
+						<option key={db.name} value={db.name}>
+							{db.name}
+						</option>
+					))}
+				</select>
+				<br />
+				<br />
+				<label htmlFor="constraintTypePicker">Constraint Type: </label>
+				<select
+					id="constraintTypePicker"
+					value={inputState.constraint.type}
+					onChange={(e) =>
+						setInputState({ ...inputState, constraint: { ...inputState.constraint, type: e.target.value } })
+					}
+				>
+					<option key="defaultOption" value={'placeholder'} disabled>
+						Select a constraint
+					</option>
+					{constraintTypes.map((type) => (
+						<option key={type} value={type}>
+							{type}
+						</option>
+					))}
+				</select>
+				<br />
+				<br />
+				{inputState.constraint.type === 'FK' && (
+					<>
+						<div className="constraintTables">
+							<div>
+								<label htmlFor="tbPicker1">Table 1: </label>
+								<select
+									id="tbPicker1"
+									value={inputState.constraint.tbName1}
+									onChange={(e) =>
+										setInputState({
+											...inputState,
+											constraint: { ...inputState.constraint, tbName1: e.target.value }
+										})
+									}
+								>
+									<option key="defaultOption" value={'placeholder'} disabled>
+										Select a table
+									</option>
+									{data?.databases
+										?.find((el) => el.name === inputState.constraint.dbName)
+										?.tables?.map((tb) => (
+											<option key={tb.name} value={tb.name}>
+												{tb.name}
+											</option>
+										))}
+								</select>
+							</div>
+							<div>
+								<label htmlFor="tbPicker2">Table 2: </label>
+								<select
+									id="tbPicker2"
+									value={inputState.constraint.tbName2}
+									onChange={(e) =>
+										setInputState({
+											...inputState,
+											constraint: { ...inputState.constraint, tbName2: e.target.value }
+										})
+									}
+								>
+									<option key="defaultOption" value={'placeholder'} disabled>
+										Select a table
+									</option>
+									{data?.databases
+										?.find((el) => el.name === inputState.constraint.dbName)
+										?.tables?.map((tb) => (
+											<option key={tb.name} value={tb.name}>
+												{tb.name}
+											</option>
+										))}
+								</select>
+							</div>
+						</div>
+						<br />
+					</>
+				)}
+				{inputState.constraint.tbName1 !== 'placeholder' &&
+					inputState.constraint.tbName2 !== 'placeholder' &&
+					inputState.constraint.tbName1 !== inputState.constraint.tbName2 && (
+						<>
+							<div className="fkColumns">
+								<div>
+									{data?.databases
+										?.find((el) => el.name === inputState.constraint.dbName)
+										?.tables?.find((el) => el.name === inputState.constraint.tbName1)
+										?.columns?.map((column, index) => (
+											<div key={index} className="indexColumnOption">
+												<input
+													type="checkbox"
+													value={column.name}
+													checked={!!inputState.constraint.columnNames.includes(column.name)}
+													onChange={() => {
+														let newColumnNames = [];
+														const columnName = inputState.constraint.columnNames.find(
+															(columnName) => columnName === column.name
+														);
+														if (columnName) {
+															// remove column name if we find it
+															newColumnNames = inputState.constraint.columnNames.filter(
+																(columnName) => columnName !== column.name
+															);
+														} else {
+															// otherwise add it if it does not violate foreign key constraint
+															const columnLimit = data?.databases
+																?.find((el) => el.name === inputState.constraint.dbName)
+																?.tables?.find(
+																	(el) => el.name === inputState.constraint.tbName2
+																)?.primaryKey?.length;
+
+															if (
+																inputState.constraint.columnNames.length < columnLimit
+															) {
+																newColumnNames = [
+																	...inputState.constraint.columnNames,
+																	column.name
+																];
+															} else {
+																newColumnNames = [...inputState.constraint.columnNames];
+															}
+														}
+														setInputState({
+															...inputState,
+															constraint: {
+																...inputState.constraint,
+																columnNames: [...newColumnNames]
+															}
+														});
+													}}
+												/>
+												<span>{column.name}</span>
+											</div>
+										))}
+								</div>
+								<em>References</em>
+								<div>
+									{data?.databases
+										?.find((el) => el.name === inputState.constraint.dbName)
+										?.tables?.find((el) => el.name === inputState.constraint.tbName2)
+										?.primaryKey?.map((column, index) => (
+											<div key={index} className="indexColumnOption">
+												<strong>{column}</strong>
+											</div>
+										))}
+								</div>
+							</div>
+							<br />
+						</>
+					)}
+				<label htmlFor="constraintName">Constraint Name: </label>
+				<input
+					id="constraintName"
+					type="text"
+					autoComplete="off"
+					spellCheck={false}
+					value={inputState.constraint.name}
+					onChange={(e) =>
+						setInputState({ ...inputState, constraint: { ...inputState.constraint, name: e.target.value } })
+					}
+				/>
+				<button
+					onClick={() => handleSubmit(inputState)}
+					disabled={
+						!inputState.constraint.name || !inputState.constraint.dbName || !inputState.constraint.type
 					}
 				>
 					Submit

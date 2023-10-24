@@ -81,3 +81,18 @@ export const createIndex = async (data) => {
 		});
 	}
 };
+
+export const addConstraint = async (data) => {
+	const constraint = data?.constraint;
+	if (constraint) {
+		return await fetch(`${baseURL}constraint/add`, {
+			method: 'POST',
+			body: JSON.stringify({
+				constraint
+			}),
+			headers: {
+				'Content-Type': 'application/json'
+			}
+		});
+	}
+};

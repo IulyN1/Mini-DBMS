@@ -29,4 +29,6 @@ const toUpper = (word) => {
 	return '';
 };
 
-module.exports = { isUnique, toUpper };
+const constraintTypes = ['FK'];
+
+module.exports = { isUnique, toUpper, constraintTypes };

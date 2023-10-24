@@ -15,7 +15,7 @@
 	margin: auto;
 	padding: 20px;
 	border: 1px solid #888;
-	width: 30%;
+	width: fit-content;
 }
 
 .close {
@@ -85,6 +85,7 @@
 	display: flex;
 	justify-content: space-between;
 	margin-bottom: 5px;
+	gap: 20px;
 }
 
 .columnOption input[type='checkbox'] {
@@ -116,4 +117,15 @@ button.plusButton:focus {
 .indexColumnOption input[type='checkbox'] {
 	width: 16px;
 	margin-right: 10px;
+}
+
+.constraintTables {
+	display: flex;
+	gap: 20px;
+}
+
+.fkColumns {
+	display: flex;
+	justify-content: space-around;
+	align-items: center;
 }

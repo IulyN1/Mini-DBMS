@@ -5,7 +5,16 @@ export const initialInputState = {
 	dbName: 'placeholder',
 	tbName: 'placeholder',
 	columns: [{ name: 'id', type: 'int', primaryKey: true }],
-	indexColumnNames: []
+	indexColumnNames: [],
+	constraint: {
+		name: '',
+		type: 'placeholder',
+		dbName: 'placeholder',
+		tbName1: 'placeholder',
+		tbName2: 'placeholder',
+		columnNames: []
+	}
 };
 
-export const types = ['int', 'string'];
+export const dataTypes = ['int', 'string'];
+export const constraintTypes = ['FK'];

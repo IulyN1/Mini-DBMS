@@ -19,6 +19,7 @@ app.delete('/database/:name', services.dropDatabase);
 app.post('/table', services.createTable);
 app.delete('/table/:name', services.dropTable);
 app.post('/index', services.createIndex);
+app.post('/constraint/add', services.addConstraint);
 
 const port = 5000;
 app.listen(port, () => {

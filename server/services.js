@@ -131,7 +131,7 @@ const createTable = (req, res) => {
 									columns: tableColumns,
 									primaryKey,
 									foreignKeys: [],
-									indexes: [{ name: 'PrimaryKeyIndex', columns: primaryKey, unique: true }]
+									indexes: []
 								});
 
 							fs.writeFile(filePath, JSON.stringify(catalog), (err) => {
@@ -230,7 +230,7 @@ const createIndex = (req, res) => {
 								catalog.databases
 									.find((el) => el.name === dbName)
 									.tables.find((el) => el.name === tbName)
-									.indexes.push({ name, columns: indexColumnNames, unique: false });
+									.indexes.push({ name, columns: indexColumnNames });
 
 								fs.writeFile(filePath, JSON.stringify(catalog), (err) => {
 									if (err) {

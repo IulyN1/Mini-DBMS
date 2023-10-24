@@ -5,24 +5,46 @@
 			"type": "database",
 			"tables": [
 				{
-					"name": "Table 1",
-					"type": "table",
-					"columns": [{ "name": "id", "type": "int" }],
-					"primaryKey": ["id"],
-					"indexes": [{ "name": "PrimaryKeyIndex", "columns": ["id"] }]
-				},
-				{
-					"name": "Table 2",
+					"name": "Second Table",
 					"type": "table",
 					"columns": [
 						{ "name": "id", "type": "int" },
-						{ "name": "description", "type": "string" }
+						{ "name": "description", "type": "string" },
+						{ "name": "other_id", "type": "int" }
 					],
 					"primaryKey": ["id", "description"],
-					"indexes": [
-						{ "name": "PrimaryKeyIndex", "columns": ["id", "description"] },
-						{ "name": "SingleIndex", "columns": ["id"] }
-					]
+					"foreignKeys": [],
+					"indexes": [{ "name": "SingleIndex", "columns": ["id"] }]
+				},
+				{
+					"name": "Categorii",
+					"type": "table",
+					"columns": [
+						{ "name": "id", "type": "int" },
+						{ "name": "nume", "type": "string" }
+					],
+					"primaryKey": ["id"],
+					"foreignKeys": [],
+					"indexes": []
+				},
+				{
+					"name": "Produse",
+					"type": "table",
+					"columns": [
+						{ "name": "id", "type": "int" },
+						{ "name": "nume", "type": "string" },
+						{ "name": "categorie_id", "type": "int" }
+					],
+					"primaryKey": ["id"],
+					"foreignKeys": [
+						{
+							"name": "FK_produse_categorii",
+							"columns": ["categorie_id"],
+							"references": "Categorii",
+							"referencedColumns": ["id"]
+						}
+					],
+					"indexes": []
 				}
 			]
 		},
@@ -31,11 +53,43 @@
 			"type": "database",
 			"tables": [
 				{
-					"name": "Table 1",
+					"name": "First Table",
 					"type": "table",
 					"columns": [{ "name": "id", "type": "int" }],
 					"primaryKey": ["id"],
-					"indexes": [{ "name": "PrimaryKeyIndex", "columns": ["id"] }]
+					"foreignKeys": [],
+					"indexes": []
+				},
+				{
+					"name": "Studenti",
+					"type": "table",
+					"columns": [
+						{ "name": "id", "type": "int" },
+						{ "name": "nume", "type": "string" },
+						{ "name": "varsta", "type": "int" },
+						{ "name": "address_id", "type": "int" }
+					],
+					"primaryKey": ["id"],
+					"foreignKeys": [
+						{
+							"name": "Stud_address_FK",
+							"columns": ["address_id"],
+							"references": "Adrese",
+							"referencedColumns": ["id"]
+						}
+					],
+					"indexes": []
+				},
+				{
+					"name": "Adrese",
+					"type": "table",
+					"columns": [
+						{ "name": "id", "type": "int" },
+						{ "name": "denumire", "type": "string" }
+					],
+					"primaryKey": ["id"],
+					"foreignKeys": [],
+					"indexes": []
 				}
 			]
 		}

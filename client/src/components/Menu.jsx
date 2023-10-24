@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Dialog from './Dialog';
 import Notification from './Notification';
-import { createDatabase, dropDatabase, createTable, dropTable, createIndex } from '../API';
+import { createDatabase, dropDatabase, createTable, dropTable, createIndex, addConstraint } from '../API';
 import './Menu.css';
 
 const Menu = ({ data, selectedNode, onAction }) => {
@@ -20,6 +20,8 @@ const Menu = ({ data, selectedNode, onAction }) => {
 				return handleDropTable(inputData);
 			case 'CREATE_INDEX':
 				return handleCreateIndex(inputData);
+			case 'ADD_CONSTRAINT':
+				return handleAddConstraint(inputData);
 			default:
 				return null;
 		}
@@ -55,6 +57,12 @@ const Menu = ({ data, selectedNode, onAction }) => {
 		onAction();
 	};
 
+	const handleAddConstraint = async (inputData) => {
+		const res = await addConstraint(inputData);
+		setResponse(res);
+		onAction();
+	};
+
 	return (
 		<>
 			<div className="buttonContainer">
@@ -63,6 +71,7 @@ const Menu = ({ data, selectedNode, onAction }) => {
 				<button onClick={() => setType('CREATE_TABLE')}>Create Table</button>
 				<button onClick={() => setType('DROP_TABLE')}>Drop Table</button>
 				<button onClick={() => setType('CREATE_INDEX')}>Create Index</button>
+				<button onClick={() => setType('ADD_CONSTRAINT')}>Add Constraint</button>
 			</div>
 			{type && (
 				<Dialog

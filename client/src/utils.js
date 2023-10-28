@@ -18,3 +18,21 @@ export const initialInputState = {
 
 export const dataTypes = ['int', 'string'];
 export const constraintTypes = ['FK'];
+
+/**
+ * Transforms table data from an object to an array of rows data
+ * @param {Object} data - the object to transform
+ * @returns {Object} - the rows array
+ */
+export const transformTableData = (data) => {
+	const transformedData = [];
+	if (data) {
+		Object.keys(data)?.forEach((key) => {
+			const value = data[key].split('#');
+			const row = [key, ...value];
+			transformedData.push(row);
+		});
+	}
+
+	return transformedData;
+};

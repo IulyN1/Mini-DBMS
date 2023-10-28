@@ -1,1 +1,101 @@
-{"databases":[{"name":"TestDB","type":"database","tables":[{"name":"Categorii","type":"table","fileName":"Categorii.kv","columns":[{"name":"id","type":"int"},{"name":"nume","type":"string"}],"primaryKey":["id"],"foreignKeys":[],"indexes":[]},{"name":"Produse","type":"table","fileName":"Produse.kv","columns":[{"name":"id","type":"int"},{"name":"nume","type":"string"},{"name":"categorie_id","type":"int"}],"primaryKey":["id"],"foreignKeys":[{"name":"FK_produse_categorii","columns":["categorie_id"],"references":"Categorii","referencedColumns":["id"]}],"indexes":[]}]},{"name":"University","type":"database","tables":[{"name":"Specializations","type":"table","fileName":"Specializations.kv","columns":[{"name":"spec_id","type":"string"},{"name":"spec_name","type":"string"},{"name":"language","type":"string"}],"primaryKey":["spec_id"],"foreignKeys":[],"indexes":[]},{"name":"Groups","type":"table","fileName":"Groups.kv","columns":[{"name":"group_id","type":"int"},{"name":"spec_id","type":"string"}],"primaryKey":["group_id"],"foreignKeys":[{"name":"Group_spec_FK","columns":["spec_id"],"references":"Specializations","referencedColumns":["spec_id"]}],"indexes":[]},{"name":"Students","type":"table","fileName":"Students.kv","columns":[{"name":"stud_id","type":"int"},{"name":"group_id","type":"int"},{"name":"stud_name","type":"string"},{"name":"email","type":"string"}],"primaryKey":["stud_id"],"foreignKeys":[{"name":"Stud_group_FK","columns":["group_id"],"references":"Groups","referencedColumns":["group_id"]}],"indexes":[]}]}]}
+{
+	"databases": [
+		{
+			"name": "TestDB",
+			"type": "database",
+			"tables": [
+				{
+					"name": "Categorii",
+					"type": "table",
+					"fileName": "Categorii.kv",
+					"columns": [
+						{ "name": "id", "type": "int" },
+						{ "name": "nume", "type": "string" }
+					],
+					"primaryKey": ["id"],
+					"foreignKeys": [],
+					"indexes": []
+				},
+				{
+					"name": "Produse",
+					"type": "table",
+					"fileName": "Produse.kv",
+					"columns": [
+						{ "name": "id", "type": "int" },
+						{ "name": "nume", "type": "string" },
+						{ "name": "categorie_id", "type": "int" }
+					],
+					"primaryKey": ["id"],
+					"foreignKeys": [
+						{
+							"name": "FK_produse_categorii",
+							"columns": ["categorie_id"],
+							"references": "Categorii",
+							"referencedColumns": ["id"]
+						}
+					],
+					"indexes": []
+				}
+			]
+		},
+		{
+			"name": "University",
+			"type": "database",
+			"tables": [
+				{
+					"name": "Specializations",
+					"type": "table",
+					"fileName": "Specializations.kv",
+					"columns": [
+						{ "name": "spec_id", "type": "string" },
+						{ "name": "spec_name", "type": "string" },
+						{ "name": "language", "type": "string" }
+					],
+					"primaryKey": ["spec_id"],
+					"foreignKeys": [],
+					"indexes": []
+				},
+				{
+					"name": "Groups",
+					"type": "table",
+					"fileName": "Groups.kv",
+					"columns": [
+						{ "name": "group_id", "type": "int" },
+						{ "name": "spec_id", "type": "string" }
+					],
+					"primaryKey": ["group_id"],
+					"foreignKeys": [
+						{
+							"name": "Group_spec_FK",
+							"columns": ["spec_id"],
+							"references": "Specializations",
+							"referencedColumns": ["spec_id"]
+						}
+					],
+					"indexes": []
+				},
+				{
+					"name": "Students",
+					"type": "table",
+					"fileName": "Students.kv",
+					"columns": [
+						{ "name": "stud_id", "type": "int" },
+						{ "name": "group_id", "type": "int" },
+						{ "name": "stud_name", "type": "string" },
+						{ "name": "email", "type": "string" }
+					],
+					"primaryKey": ["stud_id"],
+					"foreignKeys": [
+						{
+							"name": "Stud_group_FK",
+							"columns": ["group_id"],
+							"references": "Groups",
+							"referencedColumns": ["group_id"]
+						}
+					],
+					"indexes": []
+				}
+			]
+		}
+	]
+}

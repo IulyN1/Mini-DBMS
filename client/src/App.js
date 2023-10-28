@@ -27,7 +27,7 @@ function App() {
 			<Menu data={data} selectedNode={selectedNode} onAction={() => setOperationsDone(operationsDone + 1)} />
 			<div className="data">
 				<TreeView data={data} selectedNode={selectedNode} onSelect={handleNodeSelect} />
-				<DataView />
+				<DataView data={data} />
 			</div>
 		</>
 	);

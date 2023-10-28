@@ -96,3 +96,50 @@ export const addConstraint = async (data) => {
 		});
 	}
 };
+
+export const getTableData = async (data) => {
+	const dbName = data?.dbName;
+	const tbName = data?.tbName;
+	if (dbName && tbName) {
+		return await (
+			await fetch(`${baseURL}table/data?dbName=${dbName}&tbName=${tbName}`, {
+				method: 'GET'
+			})
+		).json();
+	}
+};
+
+export const insertTableData = async (data) => {
+	const dbName = data?.dbName;
+	const tbName = data?.tbName;
+	if (dbName && tbName) {
+		return await fetch(`${baseURL}table/data/insert`, {
+			method: 'POST',
+			body: JSON.stringify({
+				dbName,
+				tbName
+			}),
+			headers: {
+				'Content-Type': 'application/json'
+			}
+		});
+	}
+};
+
+export const deleteTableData = async (data) => {
+	const dbName = data?.dbName;
+	const tbName = data?.tbName;
+	const id = data?.id;
+	if (dbName && tbName && id) {
+		return await fetch(`${baseURL}table/data/delete/${id}`, {
+			method: 'DELETE',
+			body: JSON.stringify({
+				dbName,
+				tbName
+			}),
+			headers: {
+				'Content-Type': 'application/json'
+			}
+		});
+	}
+};

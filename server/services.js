@@ -376,8 +376,8 @@ const addConstraint = (req, res) => {
 };
 
 const getTableData = (req, res) => {
-	const dbName = req.body?.dbName;
-	const tbName = req.body?.tbName;
+	const dbName = req.query?.dbName;
+	const tbName = req.query?.tbName;
 	if (dbName && tbName) {
 		fs.readFile(catalogPath, 'utf8', (err, data) => {
 			if (err) {
@@ -399,7 +399,7 @@ const getTableData = (req, res) => {
 						}
 
 						try {
-							const tableData = JSON.parse(data);
+							const tableData = data && JSON.parse(data);
 							return res.status(200).json(tableData);
 						} catch (error) {
 							console.error('Error parsing table data:', error);
@@ -443,7 +443,7 @@ const insertTableData = (req, res) => {
 						}
 
 						try {
-							const tableData = JSON.parse(data);
+							const tableData = data && JSON.parse(data);
 							return res.status(200).json(tableData);
 						} catch (error) {
 							console.error('Error parsing table data:', error);
@@ -488,7 +488,7 @@ const deleteTableData = (req, res) => {
 						}
 
 						try {
-							const tableData = JSON.parse(data);
+							const tableData = data && JSON.parse(data);
 							return res.status(200).json(tableData);
 						} catch (error) {
 							console.error('Error parsing table data:', error);

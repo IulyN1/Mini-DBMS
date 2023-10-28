@@ -1,3 +1,5 @@
+const constraintTypes = ['FK'];
+
 /**
  * Checks if the name value for key 'name' is unique in the array of objects
  * @param {Object} arr - the array of objects given
@@ -28,7 +30,5 @@ const toUpper = (word) => {
 	}
 	return '';
 };
-
-const constraintTypes = ['FK'];
 
 module.exports = { isUnique, toUpper, constraintTypes };

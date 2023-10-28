@@ -18,6 +18,14 @@ const DataView = ({ data }) => {
 		}
 	};
 
+	const handleAddRowClick = () => {
+		console.log('add row');
+	};
+
+	const handleDeleteRowClick = () => {
+		console.log('delete row');
+	};
+
 	return (
 		<div className="dataViewContainer">
 			<h3>Data Viewer</h3>
@@ -47,29 +55,40 @@ const DataView = ({ data }) => {
 				<button onClick={handleViewDataClick}>View Data</button>
 			</div>
 			{tableData && (
-				<table id="dataTable">
-					<thead>
-						<tr>
-							<th key={'row_number'}></th>
-							{data?.databases
-								?.find((el) => el.name === dbName)
-								?.tables?.find((el) => el.name === tbName)
-								?.columns?.map((column) => (
-									<th key={column.name}>{column.name}</th>
-								))}
-						</tr>
-					</thead>
-					<tbody>
-						{tableData?.map((row, index) => (
-							<tr key={index}>
-								<td key={'row_number'}>{index}</td>
-								{row?.map((elem, index) => (
-									<td key={index}>{elem}</td>
-								))}
+				<>
+					<table id="dataTable">
+						<thead>
+							<tr>
+								<th key={'row_number'}></th>
+								{data?.databases
+									?.find((el) => el.name === dbName)
+									?.tables?.find((el) => el.name === tbName)
+									?.columns?.map((column) => (
+										<th key={column.name}>{column.name}</th>
+									))}
+								<th key={'delete_btn'}></th>
 							</tr>
-						))}
-					</tbody>
-				</table>
+						</thead>
+						<tbody>
+							{tableData?.map((row, index) => (
+								<tr key={index}>
+									<td key={'row_number'}>{index}</td>
+									{row?.map((elem, index) => (
+										<td key={index}>{elem}</td>
+									))}
+									<td key={'delete_btn'} className="deleteBtn" onClick={handleDeleteRowClick}>
+										&times;
+									</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+					<div>
+						<button className="addRowButton" onClick={handleAddRowClick}>
+							+
+						</button>
+					</div>
+				</>
 			)}
 		</div>
 	);

@@ -53,6 +53,33 @@
 	padding-top: 12px;
 	padding-bottom: 12px;
 	text-align: left;
-	background-color: #04aa6d;
+	background-color: darkcyan;
 	color: white;
+}
+
+.addRowButton {
+	background-color: darkcyan;
+	color: white;
+	border: none;
+	font-size: 20px;
+	border-radius: 20%;
+	margin-top: 5px;
+	padding: 5px 8px;
+}
+
+.addRowButton:hover,
+.addRowButton :focus {
+	cursor: pointer;
+	background-color: #339aff;
+}
+
+.deleteBtn {
+	color: red;
+	font-size: 20px;
+	font-weight: bold;
+}
+
+.deleteBtn:hover,
+.deleteBtn :focus {
+	cursor: pointer;
 }

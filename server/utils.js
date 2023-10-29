@@ -1,3 +1,6 @@
+const constraintTypes = ['FK'];
+const catalogPath = 'catalog.json';
+
 /**
  * Checks if the name value for key 'name' is unique in the array of objects
  * @param {Object} arr - the array of objects given
@@ -29,6 +32,28 @@ const toUpper = (word) => {
 	return '';
 };
 
-const constraintTypes = ['FK'];
+/**
+ * Transforms a table data object into key-value string
+ * @param {Object} tableData - the table data given
+ * @returns {Object} - array pair of key-value as String
+ */
+const transformTableData = (tableData) => {
+	let key = '',
+		value = '',
+		i = 0;
+	if (tableData) {
+		Object.keys(tableData).forEach((objectKey) => {
+			if (i == 0) {
+				key = tableData[objectKey];
+			} else {
+				value += tableData[objectKey];
+				value += '#';
+			}
+			i++;
+		});
+		value = value.slice(0, -1);
+	}
+	return [key, value];
+};
 
-module.exports = { isUnique, toUpper, constraintTypes };
+module.exports = { isUnique, toUpper, constraintTypes, catalogPath, transformTableData };

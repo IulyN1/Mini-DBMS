@@ -1,24 +1,13 @@
 {
 	"databases": [
 		{
-			"name": "Database 1",
+			"name": "TestDB",
 			"type": "database",
 			"tables": [
 				{
-					"name": "Second Table",
-					"type": "table",
-					"columns": [
-						{ "name": "id", "type": "int" },
-						{ "name": "description", "type": "string" },
-						{ "name": "other_id", "type": "int" }
-					],
-					"primaryKey": ["id", "description"],
-					"foreignKeys": [],
-					"indexes": [{ "name": "SingleIndex", "columns": ["id"] }]
-				},
-				{
 					"name": "Categorii",
 					"type": "table",
+					"fileName": "Categorii.kv",
 					"columns": [
 						{ "name": "id", "type": "int" },
 						{ "name": "nume", "type": "string" }
@@ -30,6 +19,7 @@
 				{
 					"name": "Produse",
 					"type": "table",
+					"fileName": "Produse.kv",
 					"columns": [
 						{ "name": "id", "type": "int" },
 						{ "name": "nume", "type": "string" },
@@ -49,46 +39,60 @@
 			]
 		},
 		{
-			"name": "Database 2",
+			"name": "University",
 			"type": "database",
 			"tables": [
 				{
-					"name": "First Table",
+					"name": "Specializations",
 					"type": "table",
-					"columns": [{ "name": "id", "type": "int" }],
-					"primaryKey": ["id"],
+					"fileName": "Specializations.kv",
+					"columns": [
+						{ "name": "spec_id", "type": "string" },
+						{ "name": "spec_name", "type": "string" },
+						{ "name": "language", "type": "string" }
+					],
+					"primaryKey": ["spec_id"],
 					"foreignKeys": [],
 					"indexes": []
 				},
 				{
-					"name": "Studenti",
+					"name": "Groups",
 					"type": "table",
+					"fileName": "Groups.kv",
 					"columns": [
-						{ "name": "id", "type": "int" },
-						{ "name": "nume", "type": "string" },
-						{ "name": "varsta", "type": "int" },
-						{ "name": "address_id", "type": "int" }
+						{ "name": "group_id", "type": "int" },
+						{ "name": "spec_id", "type": "string" }
 					],
-					"primaryKey": ["id"],
+					"primaryKey": ["group_id"],
 					"foreignKeys": [
 						{
-							"name": "Stud_address_FK",
-							"columns": ["address_id"],
-							"references": "Adrese",
-							"referencedColumns": ["id"]
+							"name": "Group_spec_FK",
+							"columns": ["spec_id"],
+							"references": "Specializations",
+							"referencedColumns": ["spec_id"]
 						}
 					],
 					"indexes": []
 				},
 				{
-					"name": "Adrese",
+					"name": "Students",
 					"type": "table",
+					"fileName": "Students.kv",
 					"columns": [
-						{ "name": "id", "type": "int" },
-						{ "name": "denumire", "type": "string" }
+						{ "name": "stud_id", "type": "int" },
+						{ "name": "group_id", "type": "int" },
+						{ "name": "stud_name", "type": "string" },
+						{ "name": "email", "type": "string" }
 					],
-					"primaryKey": ["id"],
-					"foreignKeys": [],
+					"primaryKey": ["stud_id"],
+					"foreignKeys": [
+						{
+							"name": "Stud_group_FK",
+							"columns": ["group_id"],
+							"references": "Groups",
+							"referencedColumns": ["group_id"]
+						}
+					],
 					"indexes": []
 				}
 			]

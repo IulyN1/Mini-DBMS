@@ -2,7 +2,7 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 const uri = 'mongodb+srv://iulianp14:admin@cluster0.gt5aifw.mongodb.net/?retryWrites=true&w=majority';
 
 const fs = require('fs');
-const { isUnique, toUpper, constraintTypes, catalogPath } = require('./utils');
+const { isUnique, toUpper, constraintTypes, catalogPath, transformTableData } = require('./utils');
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -446,7 +446,8 @@ const getTableData = (req, res) => {
 const insertTableData = (req, res) => {
 	const dbName = req.body?.dbName;
 	const tbName = req.body?.tbName;
-	if (dbName && tbName) {
+	const tableData = req.body?.tableData;
+	if (dbName && tbName && tableData) {
 		fs.readFile(catalogPath, 'utf8', (err, data) => {
 			if (err) {
 				console.error('Error reading file:', err);
@@ -460,19 +461,33 @@ const insertTableData = (req, res) => {
 					?.tables?.find((el) => el.name === tbName)?.fileName;
 
 				if (fileName) {
-					fs.writeFile(`./data/${dbName}/${fileName}`, 'utf8', (err, data) => {
+					fs.readFile(`./data/${dbName}/${fileName}`, 'utf8', (err, data) => {
 						if (err) {
 							console.error('Error reading file:', err);
 							return res.status(500).send('Error reading table data!');
 						}
 
-						try {
-							const tableData = data && JSON.parse(data);
-							return res.status(200).json(tableData);
-						} catch (error) {
-							console.error('Error parsing table data:', error);
-							return res.status(500).send('Error parsing table data!');
+						const fileData = JSON.parse(data);
+						const [key, value] = transformTableData(tableData);
+						if (key && value) {
+							fileData[key] = value;
 						}
+						const updatedData = JSON.stringify(fileData);
+
+						fs.writeFile(`./data/${dbName}/${fileName}`, updatedData, (err, data) => {
+							if (err) {
+								console.error('Error reading file:', err);
+								return res.status(500).send('Error reading table data!');
+							}
+
+							try {
+								const tbData = data && JSON.parse(data);
+								return res.status(200).json(tbData);
+							} catch (error) {
+								console.error('Error parsing table data:', error);
+								return res.status(500).send('Error parsing table data!');
+							}
+						});
 					});
 				} else {
 					return res.status(500).send('Cannot find data!');
@@ -505,19 +520,30 @@ const deleteTableData = (req, res) => {
 					?.tables?.find((el) => el.name === tbName)?.fileName;
 
 				if (fileName) {
-					fs.writeFile(`./data/${dbName}/${fileName}`, 'utf8', (err, data) => {
+					fs.readFile(`./data/${dbName}/${fileName}`, 'utf8', (err, data) => {
 						if (err) {
 							console.error('Error reading file:', err);
 							return res.status(500).send('Error reading table data!');
 						}
 
-						try {
-							const tableData = data && JSON.parse(data);
-							return res.status(200).json(tableData);
-						} catch (error) {
-							console.error('Error parsing table data:', error);
-							return res.status(500).send('Error parsing table data!');
-						}
+						const fileData = JSON.parse(data);
+						delete fileData[id];
+						const updatedData = JSON.stringify(fileData);
+
+						fs.writeFile(`./data/${dbName}/${fileName}`, updatedData, (err, data) => {
+							if (err) {
+								console.error('Error reading file:', err);
+								return res.status(500).send('Error reading table data!');
+							}
+
+							try {
+								const tbData = data && JSON.parse(data);
+								return res.status(200).json(tbData);
+							} catch (error) {
+								console.error('Error parsing table data:', error);
+								return res.status(500).send('Error parsing table data!');
+							}
+						});
 					});
 				} else {
 					return res.status(500).send('Cannot find data!');

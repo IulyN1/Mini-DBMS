@@ -1,7 +1,31 @@
-const fs = require('fs');
-const { isUnique, toUpper, constraintTypes } = require('./utils');
+const { MongoClient, ServerApiVersion } = require('mongodb');
+const uri = 'mongodb+srv://iulianp14:admin@cluster0.gt5aifw.mongodb.net/?retryWrites=true&w=majority';
 
-const catalogPath = 'catalog.json';
+const fs = require('fs');
+const { isUnique, toUpper, constraintTypes, catalogPath } = require('./utils');
+
+// Create a MongoClient with a MongoClientOptions object to set the Stable API version
+const client = new MongoClient(uri, {
+	serverApi: {
+		version: ServerApiVersion.v1,
+		strict: true,
+		deprecationErrors: true
+	}
+});
+
+async function run() {
+	try {
+		// Connect the client to the server	(optional starting in v4.7)
+		await client.connect();
+		// Send a ping to confirm a successful connection
+		await client.db('admin').command({ ping: 1 });
+		console.log('Successfully connected to MongoDB!');
+	} finally {
+		// Ensures that the client will close when you finish/error
+		await client.close();
+	}
+}
+run().catch(console.dir);
 
 const getData = (_, res) => {
 	fs.readFile(catalogPath, 'utf8', (err, data) => {

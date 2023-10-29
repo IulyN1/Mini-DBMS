@@ -1,4 +1,5 @@
 const constraintTypes = ['FK'];
+const catalogPath = 'catalog.json';
 
 /**
  * Checks if the name value for key 'name' is unique in the array of objects
@@ -31,4 +32,4 @@ const toUpper = (word) => {
 	return '';
 };
 
-module.exports = { isUnique, toUpper, constraintTypes };
+module.exports = { isUnique, toUpper, constraintTypes, catalogPath };

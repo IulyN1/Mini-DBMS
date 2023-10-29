@@ -1,12 +1,20 @@
-import { useState } from 'react';
-import { getTableData } from '../API';
+import { useState, useMemo } from 'react';
+import { getTableData, insertTableData, deleteTableData } from '../API';
 import { transformTableData } from '../utils';
 import './DataView.css';
+import DataDialog from './DataDialog';
 
 const DataView = ({ data }) => {
 	const [tableData, setTableData] = useState(null);
 	const [dbName, setDbName] = useState('placeholder');
 	const [tbName, setTbName] = useState('placeholder');
+	const [dialogType, setDialogType] = useState(null);
+	const [id, setId] = useState(null);
+
+	const columns = useMemo(() => {
+		return data?.databases?.find((el) => el.name === dbName)?.tables?.find((el) => el.name === tbName)?.columns;
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [tableData]);
 
 	const handleViewDataClick = () => {
 		if (dbName !== 'placeholder' && tbName !== 'placeholder') {
@@ -18,12 +26,23 @@ const DataView = ({ data }) => {
 		}
 	};
 
-	const handleAddRowClick = () => {
-		console.log('add row');
-	};
-
-	const handleDeleteRowClick = () => {
-		console.log('delete row');
+	const handleSubmit = (inputData) => {
+		if (dialogType === 'ADD_ROW') {
+			(async () => {
+				const response = await insertTableData({ dbName, tbName, tableData: inputData });
+				if (response.status === 200) {
+					handleViewDataClick();
+				}
+			})();
+		} else if (dialogType === 'DELETE_ROW') {
+			(async () => {
+				const response = await deleteTableData({ dbName, tbName, id });
+				if (response.status === 200) {
+					handleViewDataClick();
+				}
+				setId(null);
+			})();
+		}
 	};
 
 	return (
@@ -60,23 +79,27 @@ const DataView = ({ data }) => {
 						<thead>
 							<tr>
 								<th key={'row_number'}></th>
-								{data?.databases
-									?.find((el) => el.name === dbName)
-									?.tables?.find((el) => el.name === tbName)
-									?.columns?.map((column) => (
-										<th key={column.name}>{column.name}</th>
-									))}
+								{columns?.map((column) => (
+									<th key={column.name}>{column.name}</th>
+								))}
 								<th key={'delete_btn'}></th>
 							</tr>
 						</thead>
 						<tbody>
 							{tableData?.map((row, index) => (
 								<tr key={index}>
-									<td key={'row_number'}>{index}</td>
+									<td key={'row_number'}>{index + 1}</td>
 									{row?.map((elem, index) => (
 										<td key={index}>{elem}</td>
 									))}
-									<td key={'delete_btn'} className="deleteBtn" onClick={handleDeleteRowClick}>
+									<td
+										key={'delete_btn'}
+										className="deleteBtn"
+										onClick={() => {
+											setId(row[0]);
+											setDialogType('DELETE_ROW');
+										}}
+									>
 										&times;
 									</td>
 								</tr>
@@ -84,10 +107,18 @@ const DataView = ({ data }) => {
 						</tbody>
 					</table>
 					<div>
-						<button className="addRowButton" onClick={handleAddRowClick}>
+						<button className="addRowButton" onClick={() => setDialogType('ADD_ROW')}>
 							+
 						</button>
 					</div>
+					{dialogType && (
+						<DataDialog
+							data={{ columns, id }}
+							type={dialogType}
+							onClose={() => setDialogType(null)}
+							onSubmit={handleSubmit}
+						/>
+					)}
 				</>
 			)}
 		</div>

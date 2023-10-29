@@ -112,12 +112,14 @@ export const getTableData = async (data) => {
 export const insertTableData = async (data) => {
 	const dbName = data?.dbName;
 	const tbName = data?.tbName;
-	if (dbName && tbName) {
+	const tableData = data?.tableData;
+	if (dbName && tbName && tableData) {
 		return await fetch(`${baseURL}table/data/insert`, {
 			method: 'POST',
 			body: JSON.stringify({
 				dbName,
-				tbName
+				tbName,
+				tableData
 			}),
 			headers: {
 				'Content-Type': 'application/json'

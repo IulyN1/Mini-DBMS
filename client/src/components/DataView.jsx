@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react';
 import { getTableData, insertTableData, deleteTableData } from '../API';
 import { transformTableData } from '../utils';
-import './DataView.css';
 import DataDialog from './DataDialog';
+import Notification from './Notification';
+import './DataView.css';
 
 const DataView = ({ data }) => {
 	const [tableData, setTableData] = useState(null);
@@ -10,6 +11,7 @@ const DataView = ({ data }) => {
 	const [tbName, setTbName] = useState('placeholder');
 	const [dialogType, setDialogType] = useState(null);
 	const [id, setId] = useState(null);
+	const [response, setResponse] = useState(null);
 
 	const columns = useMemo(() => {
 		return data?.databases?.find((el) => el.name === dbName)?.tables?.find((el) => el.name === tbName)?.columns;
@@ -26,10 +28,11 @@ const DataView = ({ data }) => {
 		}
 	};
 
-	const handleSubmit = (inputData) => {
+	const handleSubmit = (inputData, update = false) => {
 		if (dialogType === 'ADD_ROW') {
 			(async () => {
-				const response = await insertTableData({ dbName, tbName, tableData: inputData });
+				const response = await insertTableData({ dbName, tbName, tableData: inputData, update });
+				setResponse(response);
 				if (response.status === 200) {
 					handleViewDataClick();
 				}
@@ -37,6 +40,7 @@ const DataView = ({ data }) => {
 		} else if (dialogType === 'DELETE_ROW') {
 			(async () => {
 				const response = await deleteTableData({ dbName, tbName, id });
+				setResponse(response);
 				if (response.status === 200) {
 					handleViewDataClick();
 				}
@@ -119,6 +123,7 @@ const DataView = ({ data }) => {
 							onSubmit={handleSubmit}
 						/>
 					)}
+					{response && <Notification response={response} onClose={() => setResponse(null)} />}
 				</>
 			)}
 		</div>

@@ -33,6 +33,7 @@
 	border-collapse: collapse;
 	width: 100%;
 	margin-top: 20px;
+	text-align: center;
 }
 
 #dataTable td,
@@ -52,7 +53,6 @@
 #dataTable th {
 	padding-top: 12px;
 	padding-bottom: 12px;
-	text-align: left;
 	background-color: darkcyan;
 	color: white;
 }

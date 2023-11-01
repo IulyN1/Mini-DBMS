@@ -75,7 +75,7 @@ const createDatabase = (req, res) => {
 						return res.status(200).send('Database was created successfully!');
 					});
 				} else {
-					return res.status(402).send('Database already exists!');
+					return res.status(400).send('Database already exists!');
 				}
 			} catch (error) {
 				console.error('Error parsing JSON:', error);
@@ -164,7 +164,7 @@ const createTable = (req, res) => {
 							return res.status(400).send('Invalid primary key');
 						} else {
 							// create table file
-							const fileName = `${name}.kv`;
+							const fileName = `${name}.json`;
 							fs.writeFile(`./data/${dbName}/${fileName}`, '', (err) => {
 								if (err) {
 									console.error('Error creating table file:', err);
@@ -194,7 +194,7 @@ const createTable = (req, res) => {
 							});
 						}
 					} else {
-						return res.status(402).send('Table already exists!');
+						return res.status(400).send('Table already exists!');
 					}
 				} else {
 					return res.status(404).send('Database not found!');
@@ -226,7 +226,7 @@ const dropTable = (req, res) => {
 					const table = db.tables.find((el) => el.name === name);
 					if (table) {
 						// delete table file
-						const fileName = `${name}.kv`;
+						const fileName = `${name}.json`;
 						fs.unlink(`./data/${dbName}/${fileName}`, (err) => {
 							if (err) {
 								console.error('Error deleting table file:', err);
@@ -301,7 +301,7 @@ const createIndex = (req, res) => {
 									return res.status(200).send('Index was created successfully!');
 								});
 							} else {
-								return res.status(402).send('Index name already exists!');
+								return res.status(400).send('Index name already exists!');
 							}
 						}
 					} else {
@@ -373,7 +373,7 @@ const addConstraint = (req, res) => {
 												return res.status(200).send('FK constraint was created successfully!');
 											});
 										} else {
-											return res.status(402).send('FK name already exists!');
+											return res.status(400).send('FK name already exists!');
 										}
 									} else {
 										return res.status(400).send('Invalid number of columns for FK!');
@@ -447,6 +447,7 @@ const insertTableData = (req, res) => {
 	const dbName = req.body?.dbName;
 	const tbName = req.body?.tbName;
 	const tableData = req.body?.tableData;
+	const update = req.body?.update;
 	if (dbName && tbName && tableData) {
 		fs.readFile(catalogPath, 'utf8', (err, data) => {
 			if (err) {
@@ -456,11 +457,13 @@ const insertTableData = (req, res) => {
 
 			try {
 				const catalog = JSON.parse(data);
-				const fileName = catalog.databases
+				const table = catalog.databases
 					.find((el) => el.name === dbName)
-					?.tables?.find((el) => el.name === tbName)?.fileName;
+					?.tables?.find((el) => el.name === tbName);
+				const validColumns = table?.primaryKey?.every((pk) => tableData[pk]);
 
-				if (fileName) {
+				if (table?.fileName && validColumns) {
+					const fileName = table.fileName;
 					fs.readFile(`./data/${dbName}/${fileName}`, 'utf8', (err, data) => {
 						if (err) {
 							console.error('Error reading file:', err);
@@ -469,28 +472,72 @@ const insertTableData = (req, res) => {
 
 						const fileData = JSON.parse(data);
 						const [key, value] = transformTableData(tableData);
-						if (key && value) {
-							fileData[key] = value;
+						if (fileData[key] && !update) {
+							return res.status(400).send('A record with this id already exists!');
+						} else {
+							// check fk constraints
+							const fks = table.foreignKeys;
+							const fkPromises = fks?.map((fk) => {
+								return new Promise((resolve, reject) => {
+									const refTableFileName = catalog.databases
+										.find((el) => el.name === dbName)
+										?.tables?.find((el) => el.name === fk.references)?.fileName;
+
+									if (refTableFileName) {
+										fs.readFile(`./data/${dbName}/${refTableFileName}`, 'utf8', (err, data) => {
+											if (err) {
+												console.error('Error reading file:', err);
+												reject('Error reading table data!');
+											}
+
+											const cols = fk.columns;
+											let keyValue = '';
+											cols.forEach((col) => {
+												const val = tableData[col];
+												if (val) {
+													keyValue += val;
+													keyValue += '#';
+												}
+											});
+											keyValue = keyValue.slice(0, -1);
+
+											const fileDataFK = JSON.parse(data);
+											if (!fileDataFK[keyValue]) {
+												reject('Operation violates FK constraint!');
+											}
+											resolve();
+										});
+									}
+								});
+							});
+
+							Promise.all(fkPromises)
+								.then(() => {
+									if (key && value) {
+										fileData[key] = value;
+									}
+									const updatedData = JSON.stringify(fileData);
+									fs.writeFile(`./data/${dbName}/${fileName}`, updatedData, (err, data) => {
+										if (err) {
+											console.error('Error reading file:', err);
+											reject('Error reading table data!');
+										}
+
+										try {
+											const tbData = data && JSON.parse(data);
+											return res.status(200).json(tbData);
+										} catch (error) {
+											console.error('Error parsing table data:', error);
+										}
+									});
+								})
+								.catch((error) => {
+									return res.status(500).send(error);
+								});
 						}
-						const updatedData = JSON.stringify(fileData);
-
-						fs.writeFile(`./data/${dbName}/${fileName}`, updatedData, (err, data) => {
-							if (err) {
-								console.error('Error reading file:', err);
-								return res.status(500).send('Error reading table data!');
-							}
-
-							try {
-								const tbData = data && JSON.parse(data);
-								return res.status(200).json(tbData);
-							} catch (error) {
-								console.error('Error parsing table data:', error);
-								return res.status(500).send('Error parsing table data!');
-							}
-						});
 					});
 				} else {
-					return res.status(500).send('Cannot find data!');
+					return res.status(400).send('Invalid data!');
 				}
 			} catch (error) {
 				console.error('Error parsing JSON:', error);
@@ -520,31 +567,91 @@ const deleteTableData = (req, res) => {
 					?.tables?.find((el) => el.name === tbName)?.fileName;
 
 				if (fileName) {
-					fs.readFile(`./data/${dbName}/${fileName}`, 'utf8', (err, data) => {
-						if (err) {
-							console.error('Error reading file:', err);
-							return res.status(500).send('Error reading table data!');
-						}
+					// check fk constraints
+					const otherTables = catalog.databases
+						.find((el) => el.name === dbName)
+						?.tables?.filter((el) => el.name !== tbName);
+					const referencedTables = otherTables?.filter((el) =>
+						el.foreignKeys?.find((fk) => fk.references === tbName)
+					);
+					const referencedTablesPromises = referencedTables?.map((table) => {
+						const tbFileName = table.fileName;
+						return new Promise((resolve, reject) => {
+							fs.readFile(`./data/${dbName}/${tbFileName}`, 'utf8', (err, data) => {
+								if (err) {
+									console.error('Error reading file:', err);
+									reject('Error reading table data!');
+								}
 
-						const fileData = JSON.parse(data);
-						delete fileData[id];
-						const updatedData = JSON.stringify(fileData);
+								const tbFileData = JSON.parse(data);
+								const refColumns = table.foreignKeys.find(
+									(fk) => fk.references === tbName
+								).referencedColumns;
+								const positions = [];
+								refColumns.forEach((ref) =>
+									table.columns.forEach((col, ind) => {
+										if (col.name === ref) {
+											positions.push(ind);
+										}
+									})
+								);
 
-						fs.writeFile(`./data/${dbName}/${fileName}`, updatedData, (err, data) => {
-							if (err) {
-								console.error('Error reading file:', err);
-								return res.status(500).send('Error reading table data!');
-							}
-
-							try {
-								const tbData = data && JSON.parse(data);
-								return res.status(200).json(tbData);
-							} catch (error) {
-								console.error('Error parsing table data:', error);
-								return res.status(500).send('Error parsing table data!');
-							}
+								let error = false;
+								Object.entries(tbFileData).forEach((entry) => {
+									const [key, value] = entry;
+									positions.forEach((pos) => {
+										if (pos === 0 && key === id) {
+											error = true;
+											return;
+										} else {
+											const val = value.split('#');
+											if (val[pos - 1] === id) {
+												error = true;
+												return;
+											}
+										}
+									});
+								});
+								if (error) {
+									reject('Operation violates FK constraint!');
+								}
+								resolve();
+							});
 						});
 					});
+
+					Promise.all(referencedTablesPromises)
+						.then(() => {
+							// once all fk constraints passed check proceed with delete operation
+							fs.readFile(`./data/${dbName}/${fileName}`, 'utf8', (err, data) => {
+								if (err) {
+									console.error('Error reading file:', err);
+									return res.status(500).send('Error reading table data!');
+								}
+
+								const fileData = JSON.parse(data);
+								delete fileData[id];
+								const updatedData = JSON.stringify(fileData);
+
+								fs.writeFile(`./data/${dbName}/${fileName}`, updatedData, (err, data) => {
+									if (err) {
+										console.error('Error reading file:', err);
+										return res.status(500).send('Error reading table data!');
+									}
+
+									try {
+										const tbData = data && JSON.parse(data);
+										return res.status(200).json(tbData);
+									} catch (error) {
+										console.error('Error parsing table data:', error);
+										return res.status(500).send('Error parsing table data!');
+									}
+								});
+							});
+						})
+						.catch((error) => {
+							return res.status(400).send(error);
+						});
 				} else {
 					return res.status(500).send('Cannot find data!');
 				}

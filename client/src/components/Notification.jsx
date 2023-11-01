@@ -12,14 +12,16 @@ const Notification = ({ response, onClose }) => {
 	}, [response]);
 
 	return (
-		<div className="notification">
-			<div className={response.status === 200 ? 'success' : 'error'}>
-				<span className="closeBtn" onClick={onClose}>
-					&times;
-				</span>
-				<span>{text}</span>
+		text && (
+			<div className="notification">
+				<div className={response.status === 200 ? 'success' : 'error'}>
+					<span className="closeBtn" onClick={onClose}>
+						&times;
+					</span>
+					<span>{text}</span>
+				</div>
 			</div>
-		</div>
+		)
 	);
 };
 

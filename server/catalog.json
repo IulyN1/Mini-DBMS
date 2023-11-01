@@ -7,7 +7,7 @@
 				{
 					"name": "Categorii",
 					"type": "table",
-					"fileName": "Categorii.kv",
+					"fileName": "Categorii.json",
 					"columns": [
 						{ "name": "id", "type": "int" },
 						{ "name": "nume", "type": "string" }
@@ -19,7 +19,7 @@
 				{
 					"name": "Produse",
 					"type": "table",
-					"fileName": "Produse.kv",
+					"fileName": "Produse.json",
 					"columns": [
 						{ "name": "id", "type": "int" },
 						{ "name": "nume", "type": "string" },
@@ -45,7 +45,7 @@
 				{
 					"name": "Specializations",
 					"type": "table",
-					"fileName": "Specializations.kv",
+					"fileName": "Specializations.json",
 					"columns": [
 						{ "name": "spec_id", "type": "string" },
 						{ "name": "spec_name", "type": "string" },
@@ -58,7 +58,7 @@
 				{
 					"name": "Groups",
 					"type": "table",
-					"fileName": "Groups.kv",
+					"fileName": "Groups.json",
 					"columns": [
 						{ "name": "group_id", "type": "int" },
 						{ "name": "spec_id", "type": "string" }
@@ -77,7 +77,7 @@
 				{
 					"name": "Students",
 					"type": "table",
-					"fileName": "Students.kv",
+					"fileName": "Students.json",
 					"columns": [
 						{ "name": "stud_id", "type": "int" },
 						{ "name": "group_id", "type": "int" },

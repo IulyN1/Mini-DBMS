@@ -13,8 +13,8 @@ const DataDialog = ({ data, type, onSubmit, onClose }) => {
 		}
 	};
 
-	const handleSubmit = (inputData) => {
-		onSubmit(inputData);
+	const handleSubmit = (inputData, update) => {
+		onSubmit(inputData, update);
 		onClose();
 	};
 
@@ -25,6 +25,7 @@ const DataDialog = ({ data, type, onSubmit, onClose }) => {
 				return { ...acc, [col.name]: '' };
 			}, {})
 		);
+		const [updateChecked, setUpdateChecked] = useState(false);
 
 		return (
 			<div>
@@ -50,7 +51,15 @@ const DataDialog = ({ data, type, onSubmit, onClose }) => {
 						</tr>
 					</tbody>
 				</table>
-				<button onClick={() => handleSubmit(inputData)}>Confirm</button>
+				<br />
+				<input
+					id="updateCheckbox"
+					type="checkbox"
+					checked={updateChecked}
+					onChange={() => setUpdateChecked(!updateChecked)}
+				/>
+				<label htmlFor="updateCheckbox">Update if it exists</label>
+				<button onClick={() => handleSubmit(inputData, updateChecked)}>Confirm</button>
 			</div>
 		);
 	};

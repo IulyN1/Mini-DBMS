@@ -460,8 +460,9 @@ const insertTableData = (req, res) => {
 				const table = catalog.databases
 					.find((el) => el.name === dbName)
 					?.tables?.find((el) => el.name === tbName);
+				const validColumns = table?.primaryKey?.every((pk) => tableData[pk]);
 
-				if (table?.fileName) {
+				if (table?.fileName && validColumns) {
 					const fileName = table.fileName;
 					fs.readFile(`./data/${dbName}/${fileName}`, 'utf8', (err, data) => {
 						if (err) {
@@ -476,8 +477,8 @@ const insertTableData = (req, res) => {
 						} else {
 							// check fk constraints
 							const fks = table.foreignKeys;
-							if (fks?.length > 0) {
-								fks.forEach((fk) => {
+							const fkPromises = fks?.map((fk) => {
+								return new Promise((resolve, reject) => {
 									const refTableFileName = catalog.databases
 										.find((el) => el.name === dbName)
 										?.tables?.find((el) => el.name === fk.references)?.fileName;
@@ -486,7 +487,7 @@ const insertTableData = (req, res) => {
 										fs.readFile(`./data/${dbName}/${refTableFileName}`, 'utf8', (err, data) => {
 											if (err) {
 												console.error('Error reading file:', err);
-												return res.status(500).send('Error reading table data!');
+												reject('Error reading table data!');
 											}
 
 											const cols = fk.columns;
@@ -502,39 +503,41 @@ const insertTableData = (req, res) => {
 
 											const fileDataFK = JSON.parse(data);
 											if (!fileDataFK[keyValue]) {
-												return res.status(400).send('Operation violates FK constraint!');
-											} else {
-												if (key && value) {
-													fileData[key] = value;
-												}
-												const updatedData = JSON.stringify(fileData);
-												fs.writeFile(
-													`./data/${dbName}/${fileName}`,
-													updatedData,
-													(err, data) => {
-														if (err) {
-															console.error('Error reading file:', err);
-															return res.status(500).send('Error reading table data!');
-														}
-
-														try {
-															const tbData = data && JSON.parse(data);
-															return res.status(200).json(tbData);
-														} catch (error) {
-															console.error('Error parsing table data:', error);
-															return res.status(500).send('Error parsing table data!');
-														}
-													}
-												);
+												reject('Operation violates FK constraint!');
 											}
+											resolve();
 										});
 									}
 								});
-							}
+							});
+
+							Promise.all(fkPromises)
+								.then(() => {
+									if (key && value) {
+										fileData[key] = value;
+									}
+									const updatedData = JSON.stringify(fileData);
+									fs.writeFile(`./data/${dbName}/${fileName}`, updatedData, (err, data) => {
+										if (err) {
+											console.error('Error reading file:', err);
+											reject('Error reading table data!');
+										}
+
+										try {
+											const tbData = data && JSON.parse(data);
+											return res.status(200).json(tbData);
+										} catch (error) {
+											console.error('Error parsing table data:', error);
+										}
+									});
+								})
+								.catch((error) => {
+									return res.status(500).send(error);
+								});
 						}
 					});
 				} else {
-					return res.status(500).send('Cannot find data!');
+					return res.status(400).send('Invalid data!');
 				}
 			} catch (error) {
 				console.error('Error parsing JSON:', error);
@@ -571,7 +574,7 @@ const deleteTableData = (req, res) => {
 					const referencedTables = otherTables?.filter((el) =>
 						el.foreignKeys?.find((fk) => fk.references === tbName)
 					);
-					const referencedTablesPromises = referencedTables.map((table) => {
+					const referencedTablesPromises = referencedTables?.map((table) => {
 						const tbFileName = table.fileName;
 						return new Promise((resolve, reject) => {
 							fs.readFile(`./data/${dbName}/${tbFileName}`, 'utf8', (err, data) => {

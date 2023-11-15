@@ -35,25 +35,40 @@ const toUpper = (word) => {
 /**
  * Transforms a table data object into key-value string
  * @param {Object} tableData - the table data given
+ * @param {Object} primaryKey - the list of primary keys for table
  * @returns {Object} - array pair of key-value as String
  */
-const transformTableData = (tableData) => {
+const transformTableData = (tableData, primaryKey) => {
 	let key = '',
-		value = '',
-		i = 0;
+		value = '';
 	if (tableData) {
 		Object.keys(tableData).forEach((objectKey) => {
-			if (i == 0) {
-				key = tableData[objectKey];
+			const isPk = primaryKey.includes(objectKey);
+			if (isPk) {
+				key += tableData[objectKey];
+				key += '#';
 			} else {
 				value += tableData[objectKey];
 				value += '#';
 			}
-			i++;
 		});
+		key = key.slice(0, -1);
 		value = value.slice(0, -1);
 	}
 	return [key, value];
 };
 
-module.exports = { isUnique, toUpper, constraintTypes, catalogPath, transformTableData };
+const getReturnData = (data) => {
+	let returnData = [];
+	if (data) {
+		data.forEach((el) => {
+			const key = el['_id'];
+			const value = el['value'];
+			const parsed = { [key]: value };
+			returnData.push(parsed);
+		});
+	}
+	return returnData;
+};
+
+module.exports = { isUnique, toUpper, constraintTypes, catalogPath, transformTableData, getReturnData };

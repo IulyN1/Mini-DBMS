@@ -1,51 +1,12 @@
 {
 	"databases": [
 		{
-			"name": "TestDB",
-			"type": "database",
-			"tables": [
-				{
-					"name": "Categorii",
-					"type": "table",
-					"fileName": "Categorii.json",
-					"columns": [
-						{ "name": "id", "type": "int" },
-						{ "name": "nume", "type": "string" }
-					],
-					"primaryKey": ["id"],
-					"foreignKeys": [],
-					"indexes": []
-				},
-				{
-					"name": "Produse",
-					"type": "table",
-					"fileName": "Produse.json",
-					"columns": [
-						{ "name": "id", "type": "int" },
-						{ "name": "nume", "type": "string" },
-						{ "name": "categorie_id", "type": "int" }
-					],
-					"primaryKey": ["id"],
-					"foreignKeys": [
-						{
-							"name": "FK_produse_categorii",
-							"columns": ["categorie_id"],
-							"references": "Categorii",
-							"referencedColumns": ["id"]
-						}
-					],
-					"indexes": []
-				}
-			]
-		},
-		{
 			"name": "University",
 			"type": "database",
 			"tables": [
 				{
 					"name": "Specializations",
 					"type": "table",
-					"fileName": "Specializations.json",
 					"columns": [
 						{ "name": "spec_id", "type": "string" },
 						{ "name": "spec_name", "type": "string" },
@@ -58,7 +19,6 @@
 				{
 					"name": "Groups",
 					"type": "table",
-					"fileName": "Groups.json",
 					"columns": [
 						{ "name": "group_id", "type": "int" },
 						{ "name": "spec_id", "type": "string" }
@@ -77,7 +37,6 @@
 				{
 					"name": "Students",
 					"type": "table",
-					"fileName": "Students.json",
 					"columns": [
 						{ "name": "stud_id", "type": "int" },
 						{ "name": "group_id", "type": "int" },
@@ -91,6 +50,43 @@
 							"columns": ["group_id"],
 							"references": "Groups",
 							"referencedColumns": ["group_id"]
+						}
+					],
+					"indexes": []
+				},
+				{
+					"name": "Disciplines",
+					"type": "table",
+					"columns": [
+						{ "name": "disc_id", "type": "string" },
+						{ "name": "disc_name", "type": "string" },
+						{ "name": "credit_nr", "type": "int" }
+					],
+					"primaryKey": ["disc_id"],
+					"foreignKeys": [],
+					"indexes": []
+				},
+				{
+					"name": "Marks",
+					"type": "table",
+					"columns": [
+						{ "name": "stud_id", "type": "int" },
+						{ "name": "disc_id", "type": "string" },
+						{ "name": "mark", "type": "int" }
+					],
+					"primaryKey": ["stud_id", "disc_id"],
+					"foreignKeys": [
+						{
+							"name": "FK_Marks_Stud",
+							"columns": ["stud_id"],
+							"references": "Students",
+							"referencedColumns": ["stud_id"]
+						},
+						{
+							"name": "FK_Marks_Disc",
+							"columns": ["disc_id"],
+							"references": "Disciplines",
+							"referencedColumns": ["disc_id"]
 						}
 					],
 					"indexes": []

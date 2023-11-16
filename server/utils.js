@@ -1,4 +1,4 @@
-const constraintTypes = ['FK'];
+const constraintTypes = ['FK', 'UNIQUE'];
 const catalogPath = 'catalog.json';
 
 /**

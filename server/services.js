@@ -288,7 +288,7 @@ const createIndex = (req, res) => {
 const addConstraint = (req, res) => {
 	const constraint = req.body?.constraint;
 	const name = toUpper(constraint?.name);
-	const { type, dbName, tbName1, tbName2, columnNames } = constraint;
+	const { type, dbName, tbName, tbName1, tbName2, columnNames } = constraint;
 	if (name && type && dbName && tbName1 && tbName2 && columnNames) {
 		if (!constraintTypes.includes(type)) {
 			return res.status(400).send('Invalid constraint type!');
@@ -319,6 +319,7 @@ const addConstraint = (req, res) => {
 											.find((el) => el.name === dbName)
 											.tables.find((el) => el.name === tbName1).foreignKeys;
 										if (isUnique(fks, name)) {
+											// add foreign key
 											catalog.databases
 												.find((el) => el.name === dbName)
 												.tables.find((el) => el.name === tbName1)
@@ -329,12 +330,20 @@ const addConstraint = (req, res) => {
 													referencedColumns: pk
 												});
 
+											//add index
+											catalog.databases
+												.find((el) => el.name === dbName)
+												.tables.find((el) => el.name === tbName1)
+												.indexes.push({
+													name: 'Index' + tbName1 + tbName2,
+													columns: columnNames,
+													unique: false
+												});
 											fs.writeFile(catalogPath, JSON.stringify(catalog), (err) => {
 												if (err) {
 													console.error('Error writing file:', err);
 													return res.status(500).send('Error writing file!');
 												}
-
 												return res.status(200).send('FK constraint was created successfully!');
 											});
 										} else {
@@ -348,6 +357,31 @@ const addConstraint = (req, res) => {
 								}
 							} else {
 								return res.status(400).send('Invalid tables!');
+							}
+						} else if (type === 'UNIQUE') {
+							const table = db.tables.find((el) => el.name === tbName);
+							if (table) {
+								const validColumns = columnNames.every((col) =>
+									table.columns.some((el) => el.name === col)
+								);
+								if (validColumns) {
+									//add index
+									catalog.databases
+										.find((el) => el.name === dbName)
+										.tables.find((el) => el.name === tbName)
+										.indexes.push({
+											name,
+											columns: columnNames,
+											unique: true
+										});
+									fs.writeFile(catalogPath, JSON.stringify(catalog), (err) => {
+										if (err) {
+											console.error('Error writing file:', err);
+											return res.status(500).send('Error writing file!');
+										}
+										return res.status(200).send('UNIQUE constraint was created successfully!');
+									});
+								}
 							}
 						}
 					} else {
@@ -439,6 +473,78 @@ const insertTableData = (req, res) => {
 
 				if (table && validColumns) {
 					const [key, value] = transformTableData(tableData, table.primaryKey);
+					// check indexes that are not foreign keys
+					const otherIndexes = table.indexes.filter((index) => {
+						return !table.foreignKeys.some(
+							(fk) => JSON.stringify(fk.columns) === JSON.stringify(index.columns)
+						);
+					});
+					let otherIndexesError = '';
+					try {
+						await client.connect();
+
+						await Promise.all(
+							otherIndexes.map(async (index) => {
+								const name = index.name;
+								const indexCols = index.columns;
+								let pos = 0;
+								if (indexCols.length === 1) {
+									pos = table.columns.findIndex((column) => column.name === indexCols[0]);
+								}
+								const actualValue = pos > 0 ? value.split('#')[pos - 1] : value.split('#')[pos];
+
+								const db = client.db(dbName);
+								const collection = db.collection(name);
+								const dataToInsert = { _id: actualValue, value: key };
+								const query = { _id: actualValue };
+
+								try {
+									const result = await collection.find(query).toArray();
+									if (result.length <= 0) {
+										await collection.insertOne(dataToInsert);
+									} else {
+										const id = result[0]._id;
+										let value = result[0].value;
+										if (index.unique) {
+											if (!value) {
+												value = key;
+											} else {
+												otherIndexesError += 'Operation violates UNIQUE constraint!';
+											}
+										} else {
+											if (!value) {
+												value = key;
+											} else {
+												value = value + '#' + key;
+											}
+										}
+										if (!otherIndexesError) {
+											const filter = { _id: id };
+											const update = { $set: { value } };
+
+											try {
+												await collection.updateOne(filter, update);
+											} catch (err) {
+												console.error('Error inserting in index file!', err);
+												otherIndexesError += 'Error inserting in index file!';
+											}
+										}
+									}
+								} catch (err) {
+									console.error('Error inserting in index file!', err);
+									otherIndexesError += 'Error inserting in index file!';
+								}
+							})
+						);
+					} catch (err) {
+						console.error('Error connecting to MongoDB!', err);
+					} finally {
+						await client.close();
+					}
+					if (otherIndexesError) {
+						return res.status(500).send(otherIndexesError);
+					}
+
 					// check if parent table
 					const childs = catalog.databases
 						.find((el) => el.name === dbName)
@@ -453,7 +559,7 @@ const insertTableData = (req, res) => {
 								const columns = child.foreignKeys.find(
 									(fk) => fk.references === tbName
 								)?.referencedColumns;
-								const indexes = child.indexes.filter(
+								const fkIndexes = child.indexes.filter(
 									(index) => JSON.stringify(index.columns) === JSON.stringify(columns)
 								);
 
@@ -461,7 +567,7 @@ const insertTableData = (req, res) => {
 									await client.connect();
 
 									await Promise.all(
-										indexes.map(async (index) => {
+										fkIndexes.map(async (index) => {
 											const name = index.name;
 											errorIndexes.push(name);
 
@@ -491,16 +597,46 @@ const insertTableData = (req, res) => {
 						return res.status(500).send(error);
 					}
 
+					// insert or update in table
+					try {
+						await client.connect();
+						const db = client.db(dbName);
+						const collection = db.collection(tbName);
+
+						if (!update) {
+							const dataToInsert = { _id: key, value };
+							await collection.insertOne(dataToInsert);
+						} else {
+							const filter = { _id: key };
+							const updateQuery = { $set: { value } };
+							await collection.updateOne(filter, updateQuery);
+						}
+					} catch (err) {
+						console.error('Error:', err);
+						error = err;
+					} finally {
+						await client.close();
+					}
+					if (error) {
+						return res.status(500).send(error);
+					}
+
 					// check if child
 					const hasParent = table.foreignKeys.length > 0;
 					if (hasParent) {
+						const fkIndexes = table.indexes.filter((index) => {
+							return table.foreignKeys.some(
+								(fk) => JSON.stringify(fk.columns) === JSON.stringify(index.columns)
+							);
+						});
 						let error = '';
 						try {
 							await client.connect();
 
 							// insert value in indexes also
-							for (const index of table.indexes) {
+							for (const index of fkIndexes) {
 								const name = index.name;
+
 								try {
 									const db = client.db(dbName);
 									const collection = db.collection(name);
@@ -510,6 +646,23 @@ const insertTableData = (req, res) => {
 									const result = await collection.find(query).toArray();
 									if (result.length <= 0) {
 										error += 'Operation violates FK constraint!';
+										try {
+											await client.connect();
+
+											const db = client.db(dbName);
+											const collection = db.collection(tbName);
+											const filter = { _id: key };
+
+											try {
+												await collection.deleteOne(filter);
+											} catch (err) {
+												console.error('Error deleting data!', err);
+											}
+										} catch (err) {
+											console.error('Error connecting to MongoDB!', err);
+										} finally {
+											await client.close();
+										}
 									} else {
 										// if checks passed, insert into index
 										const id = result[0]._id;
@@ -571,57 +724,10 @@ const insertTableData = (req, res) => {
 							return res.status(500).send(error);
 						}
 					}
-
-					if (!update) {
-						client
-							.connect()
-							.then(() => {
-								const db = client.db(dbName);
-								const collection = db.collection(tbName);
-								const dataToInsert = { _id: key, value };
-
-								collection
-									.insertOne(dataToInsert)
-									.then((result) => {
-										return res.status(200).send('Inserted successfully!');
-									})
-									.catch((err) => {
-										console.error('Error inserting data!', err);
-										return res.status(500).send('Error inserting data!');
-									})
-									.finally(() => {
-										client.close();
-									});
-							})
-							.catch((err) => {
-								console.error('Error connecting to MongoDB', err);
-							});
-					} else {
-						client
-							.connect()
-							.then(() => {
-								const db = client.db(dbName);
-								const collection = db.collection(tbName);
-								const filter = { _id: key };
-								const update = { $set: { value } };
-
-								collection
-									.updateOne(filter, update)
-									.then((result) => {
-										return res.status(200).send('Updated successfully!');
-									})
-									.catch((err) => {
-										console.error('Error updating data!', err);
-										return res.status(500).send('Error updating data!');
-									})
-									.finally(() => {
-										client.close();
-									});
-							})
-							.catch((err) => {
-								console.error('Error connecting to MongoDB', err);
-							});
+					if (update) {
+						return res.status(200).send('Updated successfully!');
 					}
+					return res.status(200).send('Inserted successfully!');
 				} else {
 					return res.status(400).send('Invalid data!');
 				}
@@ -640,7 +746,7 @@ const deleteTableData = (req, res) => {
 	const tbName = req.body?.tbName;
 	const id = req.params?.id;
 	if (dbName && tbName && id) {
-		fs.readFile(catalogPath, 'utf8', (err, data) => {
+		fs.readFile(catalogPath, 'utf8', async (err, data) => {
 			if (err) {
 				console.error('Error reading file:', err);
 				return res.status(500).send('Error reading catalog!');
@@ -653,29 +759,24 @@ const deleteTableData = (req, res) => {
 					?.tables?.find((el) => el.name === tbName);
 
 				if (table) {
-					client
-						.connect()
-						.then(() => {
-							const db = client.db(dbName);
-							const collection = db.collection(tbName);
-							const filter = { _id: id };
+					try {
+						await client.connect();
 
-							collection
-								.deleteOne(filter)
-								.then((result) => {
-									return res.status(200).send('Deleted successfully!');
-								})
-								.catch((err) => {
-									console.error('Error deleting data!', err);
-									return res.status(500).send('Error deleting data!');
-								})
-								.finally(() => {
-									client.close();
-								});
-						})
-						.catch((err) => {
-							console.error('Error connecting to MongoDB', err);
-						});
+						const db = client.db(dbName);
+						const collection = db.collection(tbName);
+						const filter = { _id: id };
+
+						try {
+							await collection.deleteOne(filter);
+							return res.status(200).send('Deleted successfully!');
+						} catch (err) {
+							console.error('Error deleting data!', err);
+						}
+					} catch (err) {
+						console.error('Error connecting to MongoDB!', err);
+					} finally {
+						await client.close();
+					}
 				} else {
 					return res.status(400).send('Cannot find data!');
 				}

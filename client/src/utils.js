@@ -10,6 +10,7 @@ export const initialInputState = {
 		name: '',
 		type: 'placeholder',
 		dbName: 'placeholder',
+		tbName: 'placeholder',
 		tbName1: 'placeholder',
 		tbName2: 'placeholder',
 		columnNames: []
@@ -17,7 +18,7 @@ export const initialInputState = {
 };
 
 export const dataTypes = ['int', 'string'];
-export const constraintTypes = ['FK'];
+export const constraintTypes = ['FK', 'UNIQUE'];
 
 /**
  * Transforms table data from an object to an array of rows data

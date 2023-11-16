@@ -32,7 +32,13 @@
 							"referencedColumns": ["spec_id"]
 						}
 					],
-					"indexes": []
+					"indexes": [
+						{
+							"name": "IndexGroupsSpecializations",
+							"columns": ["spec_id"],
+							"unique": false
+						}
+					]
 				},
 				{
 					"name": "Students",
@@ -52,7 +58,13 @@
 							"referencedColumns": ["group_id"]
 						}
 					],
-					"indexes": []
+					"indexes": [
+						{
+							"name": "IndexStudentsGroups",
+							"columns": ["group_id"],
+							"unique": false
+						}
+					]
 				},
 				{
 					"name": "Disciplines",
@@ -89,7 +101,18 @@
 							"referencedColumns": ["disc_id"]
 						}
 					],
-					"indexes": []
+					"indexes": [
+						{
+							"name": "IndexMarksStudents",
+							"columns": ["stud_id"],
+							"unique": false
+						},
+						{
+							"name": "IndexMarksDisciplines",
+							"columns": ["disc_id"],
+							"unique": false
+						}
+					]
 				}
 			]
 		}

@@ -502,6 +502,75 @@ const Dialog = ({ data, type, onSubmit, onClose, selected }) => {
 							<br />
 						</>
 					)}
+				{inputState.constraint.type === 'UNIQUE' && (
+					<>
+						<div className="constraintTables">
+							<div>
+								<label htmlFor="tbPicker">Table: </label>
+								<select
+									id="tbPicker"
+									value={inputState.constraint.tbName}
+									onChange={(e) =>
+										setInputState({
+											...inputState,
+											constraint: { ...inputState.constraint, tbName: e.target.value }
+										})
+									}
+								>
+									<option key="defaultOption" value={'placeholder'} disabled>
+										Select a table
+									</option>
+									{data?.databases
+										?.find((el) => el.name === inputState.constraint.dbName)
+										?.tables?.map((tb) => (
+											<option key={tb.name} value={tb.name}>
+												{tb.name}
+											</option>
+										))}
+								</select>
+							</div>
+						</div>
+						<br />
+					</>
+				)}
+				{inputState.constraint.tbName !== 'placeholder' && (
+					<div>
+						{data?.databases
+							?.find((el) => el.name === inputState.constraint.dbName)
+							?.tables?.find((el) => el.name === inputState.constraint.tbName)
+							?.columns?.map((column, index) => (
+								<div key={index} className="indexColumnOption">
+									<input
+										type="checkbox"
+										value={column.name}
+										checked={inputState.constraint.columnNames.includes(column.name)}
+										onChange={() => {
+											const columnName = column.name;
+
+											// If the column is already selected, unselect it
+											// If the column is not selected, unselect all others and select this one
+											const newColumnNames = inputState.constraint.columnNames.includes(
+												columnName
+											)
+												? inputState.constraint.columnNames.filter(
+														(name) => name !== columnName
+												  )
+												: [columnName];
+
+											setInputState({
+												...inputState,
+												constraint: {
+													...inputState.constraint,
+													columnNames: newColumnNames
+												}
+											});
+										}}
+									/>
+									<span>{column.name}</span>
+								</div>
+							))}
+					</div>
+				)}
 				<label htmlFor="constraintName">Constraint Name: </label>
 				<input
 					id="constraintName"

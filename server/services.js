@@ -187,7 +187,7 @@ const dropTable = (req, res) => {
 	const name = toUpper(req.params?.name);
 	const dbName = toUpper(req.body?.dbName);
 	if (name && dbName) {
-		fs.readFile(catalogPath, 'utf8', (err, data) => {
+		fs.readFile(catalogPath, 'utf8', async (err, data) => {
 			if (err) {
 				console.error('Error reading file:', err);
 				return res.status(500).send('Error reading catalog!');
@@ -199,6 +199,81 @@ const dropTable = (req, res) => {
 				if (db) {
 					const table = db.tables.find((el) => el.name === name);
 					if (table) {
+						// check for foreign key constraint if parent table
+						const childs = catalog.databases
+							.find((el) => el.name === dbName)
+							?.tables?.filter((el) => el.foreignKeys.some((fk) => fk.references === name));
+						if (childs.length > 0) {
+							try {
+								await client.connect();
+
+								const db = client.db(dbName);
+								const collection = db.collection(name);
+								const result = await collection.find({}).toArray();
+								if (result.length > 0) {
+									const ids = result.map((res) => res._id);
+									let error = '';
+									try {
+										await Promise.all(
+											childs?.map(async (child) => {
+												const columns = child.foreignKeys.find(
+													(fk) => fk.references === name
+												)?.referencedColumns;
+												const fkIndexes = child.indexes.filter(
+													(index) => JSON.stringify(index.columns) === JSON.stringify(columns)
+												);
+												//check for each value from the table in it's children indexes
+												try {
+													await Promise.all(
+														fkIndexes.map(async (index) => {
+															await Promise.all(
+																ids.map(async (id) => {
+																	if (!error) {
+																		const name = index.name;
+																		const db = client.db(dbName);
+																		const collection = db.collection(name);
+																		const query = { _id: id };
+
+																		// check foreign key
+																		try {
+																			const result = await collection
+																				.find(query)
+																				.toArray();
+																			if (result[0].value) {
+																				error =
+																					'Operation violates FK constraint!';
+																			}
+																		} catch (err) {
+																			console.error(
+																				'Error reading from index file!',
+																				err
+																			);
+																			error = 'Error reading from index file!';
+																		}
+																	}
+																})
+															);
+														})
+													);
+												} catch (err) {
+													console.error('Error connecting to MongoDB!', err);
+												} finally {
+													await client.close();
+												}
+											})
+										);
+									} catch (err) {
+										console.error('Error occurred!', err);
+									}
+									if (error) {
+										return res.status(500).send(error);
+									}
+								}
+							} catch (err) {
+								console.error('Error reading table!', err);
+							}
+						}
+
 						// update catalog
 						const otherTables = db.tables.filter((el) => el.name !== name);
 						const tables = otherTables.map((el) => {
@@ -597,30 +672,6 @@ const insertTableData = (req, res) => {
 						return res.status(500).send(error);
 					}
 
-					// insert or update in table
-					try {
-						await client.connect();
-						const db = client.db(dbName);
-						const collection = db.collection(tbName);
-
-						if (!update) {
-							const dataToInsert = { _id: key, value };
-							await collection.insertOne(dataToInsert);
-						} else {
-							const filter = { _id: key };
-							const updateQuery = { $set: { value } };
-							await collection.updateOne(filter, updateQuery);
-						}
-					} catch (err) {
-						console.error('Error:', err);
-						error = err;
-					} finally {
-						await client.close();
-					}
-					if (error) {
-						return res.status(500).send(error);
-					}
-
 					// check if child
 					const hasParent = table.foreignKeys.length > 0;
 					if (hasParent) {
@@ -636,33 +687,22 @@ const insertTableData = (req, res) => {
 							// insert value in indexes also
 							for (const index of fkIndexes) {
 								const name = index.name;
+								const indexCols = index.columns;
+								let pos = 0;
+								if (indexCols.length === 1) {
+									pos = table.columns.findIndex((column) => column.name === indexCols[0]);
+								}
+								const actualValue = pos > 0 ? value.split('#')[pos - 1] : value.split('#')[pos];
 
 								try {
 									const db = client.db(dbName);
 									const collection = db.collection(name);
-									const query = { _id: value };
+									const query = { _id: actualValue };
 
 									// check for foreign key
 									const result = await collection.find(query).toArray();
 									if (result.length <= 0) {
 										error += 'Operation violates FK constraint!';
-										try {
-											await client.connect();
-
-											const db = client.db(dbName);
-											const collection = db.collection(tbName);
-											const filter = { _id: key };
-
-											try {
-												await collection.deleteOne(filter);
-											} catch (err) {
-												console.error('Error deleting data!', err);
-											}
-										} catch (err) {
-											console.error('Error connecting to MongoDB!', err);
-										} finally {
-											await client.close();
-										}
 									} else {
 										// if checks passed, insert into index
 										const id = result[0]._id;
@@ -724,10 +764,28 @@ const insertTableData = (req, res) => {
 							return res.status(500).send(error);
 						}
 					}
-					if (update) {
-						return res.status(200).send('Updated successfully!');
+					// insert or update in table
+					try {
+						await client.connect();
+						const db = client.db(dbName);
+						const collection = db.collection(tbName);
+
+						if (!update) {
+							const dataToInsert = { _id: key, value };
+							await collection.insertOne(dataToInsert);
+							return res.status(200).send('Inserted successfully!');
+						} else {
+							const filter = { _id: key };
+							const updateQuery = { $set: { value } };
+							await collection.updateOne(filter, updateQuery);
+							return res.status(200).send('Updated successfully!');
+						}
+					} catch (err) {
+						console.error('Error:', err);
+						error = err;
+					} finally {
+						await client.close();
 					}
-					return res.status(200).send('Inserted successfully!');
 				} else {
 					return res.status(400).send('Invalid data!');
 				}
@@ -759,6 +817,169 @@ const deleteTableData = (req, res) => {
 					?.tables?.find((el) => el.name === tbName);
 
 				if (table) {
+					// check indexes that are not foreign keys
+					const otherIndexes = table.indexes.filter((index) => {
+						return !table.foreignKeys.some(
+							(fk) => JSON.stringify(fk.columns) === JSON.stringify(index.columns)
+						);
+					});
+
+					let otherIndexesError = '';
+					try {
+						await client.connect();
+
+						await Promise.all(
+							otherIndexes.map(async (index) => {
+								const name = index.name;
+								const db = client.db(dbName);
+								const collection = db.collection(name);
+
+								try {
+									const result = await collection.find({}).toArray();
+									const el = result?.find((elem) => elem?.value?.split('#').includes(id));
+									if (el) {
+										const otherValues = el.value
+											.split('#')
+											.filter((val) => val !== id)
+											.join('#');
+										if (!otherValues) {
+											await collection.deleteOne({ _id: el._id });
+										} else {
+											try {
+												await collection.updateOne(
+													{ _id: el._id },
+													{ $set: { value: otherValues } }
+												);
+											} catch (err) {
+												console.error('Error deleting from index file!', err);
+												otherIndexesError += 'Error deleting from index file!';
+											}
+										}
+									}
+								} catch (err) {
+									console.error('Error deleting from index file!', err);
+									otherIndexesError += 'Error deleting from index file!';
+								}
+							})
+						);
+					} catch (err) {
+						console.error('Error connecting to MongoDB!', err);
+					} finally {
+						await client.close();
+					}
+					if (otherIndexesError) {
+						return res.status(500).send(otherIndexesError);
+					}
+
+					// check if parent table
+					const childs = catalog.databases
+						.find((el) => el.name === dbName)
+						?.tables?.filter((el) => el.foreignKeys.some((fk) => fk.references === tbName));
+					// check for each child the foreign key constraint
+					let error = '';
+					try {
+						await Promise.all(
+							childs?.map(async (child) => {
+								const columns = child.foreignKeys.find(
+									(fk) => fk.references === tbName
+								)?.referencedColumns;
+								const fkIndexes = child.indexes.filter(
+									(index) => JSON.stringify(index.columns) === JSON.stringify(columns)
+								);
+
+								try {
+									await client.connect();
+
+									await Promise.all(
+										fkIndexes.map(async (index) => {
+											if (!error) {
+												const name = index.name;
+												const db = client.db(dbName);
+												const collection = db.collection(name);
+												const query = { _id: id };
+
+												// check foreign key
+												try {
+													const result = await collection.find(query).toArray();
+													if (result[0].value) {
+														error += 'Operation violates FK constraint!';
+													} else {
+														await collection.deleteOne(query);
+													}
+												} catch (err) {
+													console.error('Error deleting from index file!', err);
+													error += 'Error deleting from index file!';
+												}
+											}
+										})
+									);
+								} catch (err) {
+									console.error('Error connecting to MongoDB!', err);
+								} finally {
+									await client.close();
+								}
+							})
+						);
+					} catch (err) {
+						console.error('Error occurred!', err);
+					}
+					if (error) {
+						return res.status(500).send(error);
+					}
+
+					// check if child
+					const hasParent = table.foreignKeys.length > 0;
+					if (hasParent) {
+						const fkIndexes = table.indexes.filter((index) => {
+							return table.foreignKeys.some(
+								(fk) => JSON.stringify(fk.columns) === JSON.stringify(index.columns)
+							);
+						});
+						let error = '';
+						try {
+							await client.connect();
+
+							// delete from indexes also
+							for (const index of fkIndexes) {
+								const name = index.name;
+								const db = client.db(dbName);
+								const collection = db.collection(name);
+
+								try {
+									const result = await collection.find({}).toArray();
+									const el = result?.find((elem) => elem?.value?.split('#').includes(id));
+									if (el) {
+										const otherValues = el.value
+											.split('#')
+											.filter((val) => val !== id)
+											.join('#');
+										if (!otherValues) {
+											await collection.deleteOne({ _id: el._id });
+										} else {
+											try {
+												await collection.updateOne(
+													{ _id: el._id },
+													{ $set: { value: otherValues } }
+												);
+											} catch (err) {
+												console.error('Error deleting from index file!', err);
+												error += 'Error deleting from index file!';
+											}
+										}
+									}
+								} catch (err) {
+									console.error('Error deleting from index file!', err);
+									error += 'Error deleting from index file!';
+								}
+							}
+						} catch (err) {
+							console.error('Error connecting to MongoDB', err);
+						} finally {
+							await client.close();
+						}
+					}
+
+					// delete from table
 					try {
 						await client.connect();
 

@@ -533,7 +533,6 @@ const insertTableData = (req, res) => {
 	const dbName = req.body?.dbName;
 	const tbName = req.body?.tbName;
 	const tableData = req.body?.tableData;
-	const update = req.body?.update;
 	if (dbName && tbName && tableData) {
 		fs.readFile(catalogPath, 'utf8', async (err, data) => {
 			if (err) {
@@ -803,17 +802,10 @@ const insertTableData = (req, res) => {
 						await client.connect();
 						const db = client.db(dbName);
 						const collection = db.collection(tbName);
+						const dataToInsert = { _id: key, value };
 
-						if (!update) {
-							const dataToInsert = { _id: key, value };
-							await collection.insertOne(dataToInsert);
-							return res.status(200).send('Inserted successfully!');
-						} else {
-							const filter = { _id: key };
-							const updateQuery = { $set: { value } };
-							await collection.updateOne(filter, updateQuery);
-							return res.status(200).send('Updated successfully!');
-						}
+						await collection.insertOne(dataToInsert);
+						return res.status(200).send('Inserted successfully!');
 					} catch (err) {
 						console.error('Error:', err);
 						error = err;

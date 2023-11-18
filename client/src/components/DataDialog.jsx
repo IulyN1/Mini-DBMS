@@ -51,14 +51,18 @@ const DataDialog = ({ data, type, onSubmit, onClose }) => {
 						</tr>
 					</tbody>
 				</table>
-				<br />
-				<input
-					id="updateCheckbox"
-					type="checkbox"
-					checked={updateChecked}
-					onChange={() => setUpdateChecked(!updateChecked)}
-				/>
-				<label htmlFor="updateCheckbox">Update if it exists</label>
+				{updateChecked && (
+					<>
+						<br />
+						<input
+							id="updateCheckbox"
+							type="checkbox"
+							checked={updateChecked}
+							onChange={() => setUpdateChecked(!updateChecked)}
+						/>
+						<label htmlFor="updateCheckbox">Update if it exists</label>
+					</>
+				)}
 				<button onClick={() => handleSubmit(inputData, updateChecked)}>Confirm</button>
 			</div>
 		);

@@ -14,7 +14,9 @@
 					],
 					"primaryKey": ["spec_id"],
 					"foreignKeys": [],
-					"indexes": []
+					"indexes": [
+						{ "name": "DoubleIndexSpecializations", "columns": ["spec_name", "language"], "unique": false }
+					]
 				},
 				{
 					"name": "Groups",
@@ -52,7 +54,10 @@
 							"referencedColumns": ["group_id"]
 						}
 					],
-					"indexes": [{ "name": "IndexStudentsGroups", "columns": ["group_id"], "unique": false }]
+					"indexes": [
+						{ "name": "IndexStudentsGroups", "columns": ["group_id"], "unique": false },
+						{ "name": "UniqueEmailStudents", "columns": ["email"], "unique": true }
+					]
 				},
 				{
 					"name": "Disciplines",
@@ -95,6 +100,7 @@
 					]
 				}
 			]
-		}
+		},
+		{ "name": "TestDB", "type": "database", "tables": [] }
 	]
 }

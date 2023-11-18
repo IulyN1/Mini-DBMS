@@ -46,7 +46,7 @@ const transformTableData = (tableData, primaryKey) => {
 			const isPk = primaryKey.includes(objectKey);
 			if (isPk) {
 				key += tableData[objectKey];
-				key += '#';
+				key += '$';
 			} else {
 				value += tableData[objectKey];
 				value += '#';

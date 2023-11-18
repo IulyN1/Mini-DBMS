@@ -267,6 +267,8 @@ const dropTable = (req, res) => {
 									}
 									if (error) {
 										return res.status(500).send(error);
+									} else {
+										await collection.drop();
 									}
 								}
 							} catch (err) {
@@ -563,10 +565,26 @@ const insertTableData = (req, res) => {
 								const name = index.name;
 								const indexCols = index.columns;
 								let pos = 0;
+								let actualValue = value;
 								if (indexCols.length === 1) {
 									pos = table.columns.findIndex((column) => column.name === indexCols[0]);
+									actualValue = pos > 0 ? value.split('#')[pos - 1] : value.split('#')[pos];
+								} else if (indexCols.length > 1) {
+									const len = indexCols.length;
+									const posStart = table.columns.findIndex((column) => column.name === indexCols[0]);
+									const posEnd = table.columns.findIndex(
+										(column) => column.name === indexCols[len - 1]
+									);
+									const splitted = value.split('#');
+									let acumulator = '';
+									for (let i = posStart - 1; i <= posEnd - 1; i++) {
+										acumulator += splitted[i];
+										if (i !== posEnd - 1) {
+											acumulator += '$';
+										}
+									}
+									actualValue = acumulator;
 								}
-								const actualValue = pos > 0 ? value.split('#')[pos - 1] : value.split('#')[pos];
 
 								const db = client.db(dbName);
 								const collection = db.collection(name);
@@ -689,10 +707,26 @@ const insertTableData = (req, res) => {
 								const name = index.name;
 								const indexCols = index.columns;
 								let pos = 0;
+								let actualValue = value;
 								if (indexCols.length === 1) {
 									pos = table.columns.findIndex((column) => column.name === indexCols[0]);
+									actualValue = pos > 0 ? value.split('#')[pos - 1] : value.split('#')[pos];
+								} else if (indexCols.length > 1) {
+									const len = indexCols.length;
+									const posStart = table.columns.findIndex((column) => column.name === indexCols[0]);
+									const posEnd = table.columns.findIndex(
+										(column) => column.name === indexCols[len - 1]
+									);
+									const splitted = value.split('#');
+									let acumulator = '';
+									for (let i = posStart - 1; i <= posEnd - 1; i++) {
+										acumulator += splitted[i];
+										if (i !== posEnd - 1) {
+											acumulator += '$';
+										}
+									}
+									actualValue = acumulator;
 								}
-								const actualValue = pos > 0 ? value.split('#')[pos - 1] : value.split('#')[pos];
 
 								try {
 									const db = client.db(dbName);
@@ -954,8 +988,6 @@ const deleteTableData = (req, res) => {
 											.filter((val) => val !== id)
 											.join('#');
 										if (!otherValues) {
-											await collection.deleteOne({ _id: el._id });
-										} else {
 											try {
 												await collection.updateOne(
 													{ _id: el._id },

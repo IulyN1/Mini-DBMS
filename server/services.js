@@ -979,16 +979,15 @@ const deleteTableData = (req, res) => {
 											.split('#')
 											.filter((val) => val !== id)
 											.join('#');
-										if (!otherValues) {
-											try {
-												await collection.updateOne(
-													{ _id: el._id },
-													{ $set: { value: otherValues } }
-												);
-											} catch (err) {
-												console.error('Error deleting from index file!', err);
-												error += 'Error deleting from index file!';
-											}
+
+										try {
+											await collection.updateOne(
+												{ _id: el._id },
+												{ $set: { value: otherValues } }
+											);
+										} catch (err) {
+											console.error('Error deleting from index file!', err);
+											error += 'Error deleting from index file!';
 										}
 									}
 								} catch (err) {
@@ -1015,7 +1014,8 @@ const deleteTableData = (req, res) => {
 							await collection.deleteOne(filter);
 							return res.status(200).send('Deleted successfully!');
 						} catch (err) {
-							console.error('Error deleting data!', err);
+							console.error('Error deleting from table!', err);
+							return res.status(500).send('Error deleting from table!');
 						}
 					} catch (err) {
 						console.error('Error connecting to MongoDB!', err);

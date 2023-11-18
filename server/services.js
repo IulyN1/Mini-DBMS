@@ -797,7 +797,7 @@ const insertTableData = (req, res) => {
 							return res.status(500).send(error);
 						}
 					}
-					// insert or update in table
+					// insert in table
 					try {
 						await client.connect();
 						const db = client.db(dbName);

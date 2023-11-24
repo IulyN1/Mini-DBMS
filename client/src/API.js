@@ -147,3 +147,16 @@ export const deleteTableData = async (data) => {
 		});
 	}
 };
+
+export const getQueryData = async (data) => {
+	const dbName = data?.dbName;
+	const query = data?.query;
+	const sequential = data?.sequential;
+	if (dbName && query) {
+		return await (
+			await fetch(`${baseURL}query?dbName=${dbName}&sequential=${sequential}&query=${query}`, {
+				method: 'GET'
+			})
+		).json();
+	}
+};

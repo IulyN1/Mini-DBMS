@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { getQueryData } from '../API';
 import { transformTableData } from '../utils';
+import Notification from './Notification';
 import './QueryView.css';
 
 const QueryView = ({ data }) => {
@@ -8,13 +9,19 @@ const QueryView = ({ data }) => {
 	const [dbName, setDbName] = useState('placeholder');
 	const [query, setQuery] = useState('');
 	const [sequential, setSequential] = useState(false);
+	const [errorResponse, setErrorResponse] = useState(null);
 
 	const handleQueryClick = () => {
 		if (dbName !== 'placeholder' && query) {
 			(async () => {
-				const response = await getQueryData({ dbName, sequential, query });
-				const responseData = transformTableData(response);
-				setTableData(responseData);
+				const res = await getQueryData({ dbName, sequential, query });
+				if (res.status === 200) {
+					const response = await res.json();
+					const responseData = transformTableData(response);
+					setTableData(responseData);
+				} else {
+					setErrorResponse(res);
+				}
 			})();
 		}
 	};
@@ -53,23 +60,19 @@ const QueryView = ({ data }) => {
 				placeholder="Write query here"
 			/>
 			{tableData && (
-				<>
-					<table id="dataTable">
-						<thead>
-							<tr>
-								<th key={'row_number'}></th>
+				<table id="dataTable">
+					<tbody>
+						{tableData?.map((row, index) => (
+							<tr key={index}>
+								{row?.map((elem, index) => (
+									<td key={index}>{elem}</td>
+								))}
 							</tr>
-						</thead>
-						<tbody>
-							{tableData?.map((row, index) => (
-								<tr key={index}>
-									<td key={'row_number'}>{index + 1}</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
-				</>
+						))}
+					</tbody>
+				</table>
 			)}
+			{errorResponse && <Notification response={errorResponse} onClose={() => setErrorResponse(null)} />}
 		</div>
 	);
 };

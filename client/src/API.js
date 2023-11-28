@@ -153,10 +153,8 @@ export const getQueryData = async (data) => {
 	const query = data?.query;
 	const sequential = data?.sequential;
 	if (dbName && query) {
-		return await (
-			await fetch(`${baseURL}query?dbName=${dbName}&sequential=${sequential}&query=${query}`, {
-				method: 'GET'
-			})
-		).json();
+		return await fetch(`${baseURL}query?dbName=${dbName}&sequential=${sequential}&query=${query}`, {
+			method: 'GET'
+		});
 	}
 };

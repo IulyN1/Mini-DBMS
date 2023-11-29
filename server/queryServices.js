@@ -28,7 +28,6 @@ const getQueryData = (req, res) => {
 					console.error('Error reading file:', err);
 					return res.status(500).send('Error reading catalog!');
 				}
-
 				try {
 					const catalog = JSON.parse(data);
 
@@ -51,7 +50,9 @@ const getQueryData = (req, res) => {
 
 								const result = await collection.find().toArray();
 
+								// start timer
 								const startTime = performance.now();
+
 								let filtered = [];
 								result.forEach((elem) => {
 									const val = elem.value.split('#');
@@ -65,7 +66,6 @@ const getQueryData = (req, res) => {
 
 										if (index || index === 0) {
 											let conditionResult;
-
 											if (operator === '=') {
 												conditionResult =
 													index === 0
@@ -134,11 +134,14 @@ const getQueryData = (req, res) => {
 									filtered = Array.from(filtered).map((str) => JSON.parse(str));
 								}
 								const parsedData = getReturnData(filtered);
+
+								// end timer
 								const endTime = performance.now();
 								console.log(`Sequential time: ${endTime - startTime} ms`);
+
 								return res.status(200).json(parsedData);
 							} catch (err) {
-								console.error('Error in query!:', err);
+								console.error('Error in query!', err);
 								return res.status(500).send('Error in query!');
 							} finally {
 								await client.close();
@@ -149,11 +152,14 @@ const getQueryData = (req, res) => {
 							let mappedResults = '';
 							let noIndexConditions = [];
 							for (const condition of conditions) {
+								// start timer
 								const startTime = performance.now();
+
 								const [columnName, operator, value] = condition.split(/\s*(=|<|>)\s*/);
 								// Check if the column has an index
 								const tableIndex = table.indexes.find((index) => index.columns.includes(columnName));
 
+								// end timer
 								const endTime = performance.now();
 								times.push(endTime - startTime);
 
@@ -177,33 +183,42 @@ const getQueryData = (req, res) => {
 
 										const result = await collection.find(filter).toArray();
 
+										// start timer
 										const startTime1 = performance.now();
+
 										mappedResults = result
 											.map((element) => (element.value ? element.value : null))
 											.filter(Boolean)
 											.join('#');
+
+										// end timer
 										const endTime1 = performance.now();
 										times.push(endTime1 - startTime1);
 									} finally {
 										await client.close();
 									}
 								} else {
+									// start timer
 									const startTime1 = performance.now();
 
 									const cond = [columnName, operator, value];
 									noIndexConditions.push(cond);
 
+									// end timer
 									const endTime1 = performance.now();
 									times.push(endTime1 - startTime1);
 								}
 							}
 							if (mappedResults) {
+								// start timer
 								const startTime1 = performance.now();
 
 								const ids = mappedResults.split('#');
 
+								// end timer
 								const endTime1 = performance.now();
 								times.push(endTime1 - startTime1);
+
 								try {
 									await client.connect();
 									const database = client.db(dbName);
@@ -215,7 +230,9 @@ const getQueryData = (req, res) => {
 
 									const result = await collection.find(filter).toArray();
 
+									// start timer
 									const startTime2 = performance.now();
+
 									let filtered = [];
 									let resultConditions;
 									// Process the result array based on noIndexConditions
@@ -249,8 +266,9 @@ const getQueryData = (req, res) => {
 										filtered = new Set(filtered.map((obj) => JSON.stringify(obj)));
 										filtered = Array.from(filtered).map((str) => JSON.parse(str));
 									}
-
 									const parsedData = getReturnData(filtered);
+
+									// end timer
 									const endTime2 = performance.now();
 									times.push(endTime2 - startTime2);
 
@@ -258,6 +276,7 @@ const getQueryData = (req, res) => {
 										return accumulator + currentValue;
 									}, 0);
 									console.log(`Index time: ${time} ms`);
+
 									return res.status(200).json(parsedData);
 								} finally {
 									await client.close();
@@ -271,7 +290,9 @@ const getQueryData = (req, res) => {
 
 									const result = await collection.find().toArray();
 
+									// start timer
 									const startTime = performance.now();
+
 									let filtered = [];
 									result.forEach((elem) => {
 										const val = elem.value.split('#');
@@ -285,7 +306,6 @@ const getQueryData = (req, res) => {
 
 											if (index || index === 0) {
 												let conditionResult;
-
 												if (operator === '=') {
 													conditionResult =
 														index === 0
@@ -356,11 +376,14 @@ const getQueryData = (req, res) => {
 										filtered = Array.from(filtered).map((str) => JSON.parse(str));
 									}
 									const parsedData = getReturnData(filtered);
+
+									// end timer
 									const endTime = performance.now();
 									console.log(`Index(sequential) time: ${endTime - startTime} ms`);
+
 									return res.status(200).json(parsedData);
 								} catch (err) {
-									console.error('Error in query!:', err);
+									console.error('Error in query!', err);
 									return res.status(500).send('Error in query!');
 								} finally {
 									await client.close();

@@ -12,6 +12,7 @@ app.use(
 );
 
 const services = require('./services');
+const queryServices = require('./queryServices');
 
 app.get('/', services.getData);
 app.post('/database', services.createDatabase);
@@ -23,6 +24,7 @@ app.post('/constraint/add', services.addConstraint);
 app.get('/table/data', services.getTableData);
 app.post('/table/data/insert', services.insertTableData);
 app.delete('/table/data/delete/:id', services.deleteTableData);
+app.get('/query', queryServices.getQueryData);
 
 const port = 5000;
 app.listen(port, () => {

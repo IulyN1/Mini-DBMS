@@ -43,7 +43,8 @@
 						{ "name": "stud_id", "type": "int" },
 						{ "name": "group_id", "type": "int" },
 						{ "name": "stud_name", "type": "string" },
-						{ "name": "email", "type": "string" }
+						{ "name": "email", "type": "string" },
+						{ "name": "mark", "type": "int" }
 					],
 					"primaryKey": ["stud_id"],
 					"foreignKeys": [
@@ -57,46 +58,6 @@
 					"indexes": [
 						{ "name": "IndexStudentsGroups", "columns": ["group_id"], "unique": false },
 						{ "name": "UniqueEmailStudents", "columns": ["email"], "unique": true }
-					]
-				},
-				{
-					"name": "Disciplines",
-					"type": "table",
-					"columns": [
-						{ "name": "disc_id", "type": "string" },
-						{ "name": "disc_name", "type": "string" },
-						{ "name": "credit_nr", "type": "int" }
-					],
-					"primaryKey": ["disc_id"],
-					"foreignKeys": [],
-					"indexes": []
-				},
-				{
-					"name": "Marks",
-					"type": "table",
-					"columns": [
-						{ "name": "stud_id", "type": "int" },
-						{ "name": "disc_id", "type": "string" },
-						{ "name": "mark", "type": "int" }
-					],
-					"primaryKey": ["stud_id", "disc_id"],
-					"foreignKeys": [
-						{
-							"name": "FK_Marks_Stud",
-							"columns": ["stud_id"],
-							"references": "Students",
-							"referencedColumns": ["stud_id"]
-						},
-						{
-							"name": "FK_Marks_Disc",
-							"columns": ["disc_id"],
-							"references": "Disciplines",
-							"referencedColumns": ["disc_id"]
-						}
-					],
-					"indexes": [
-						{ "name": "IndexMarksStudents", "columns": ["stud_id"], "unique": false },
-						{ "name": "IndexMarksDisciplines", "columns": ["disc_id"], "unique": false }
 					]
 				}
 			]

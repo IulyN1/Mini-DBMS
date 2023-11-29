@@ -807,7 +807,7 @@ const insertTableData = (req, res) => {
 						await collection.insertOne(dataToInsert);
 						return res.status(200).send('Inserted successfully!');
 					} catch (err) {
-						console.error('Error inserting in table!:', err);
+						console.error('Error inserting in table!', err);
 						return res.status(500).send('Error inserting in table!');
 					} finally {
 						await client.close();

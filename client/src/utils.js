@@ -32,8 +32,13 @@ export const transformTableData = (data) => {
 			Object.keys(el)?.forEach((elKey) => {
 				const key = elKey.split('#');
 				const value = el[elKey].split('#');
-				const row = [...key, ...value];
-				transformedData.push(row);
+				if (value[0]) {
+					const row = [...key, ...value];
+					transformedData.push(row);
+				} else {
+					const row = [...key];
+					transformedData.push(row);
+				}
 			});
 		});
 	}

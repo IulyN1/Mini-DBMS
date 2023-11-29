@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Menu from './components/Menu';
 import TreeView from './components/TreeView';
 import DataView from './components/DataView';
+import QueryView from './components/QueryView';
 import { getData } from './API';
 import { initialData } from './utils';
 import './App.css';
@@ -28,6 +29,7 @@ function App() {
 			<div className="data">
 				<TreeView data={data} selectedNode={selectedNode} onSelect={handleNodeSelect} />
 				<DataView data={data} />
+				<QueryView data={data} />
 			</div>
 		</>
 	);

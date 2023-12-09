@@ -1,10 +1,9 @@
 const { MongoClient, ServerApiVersion } = require('mongodb');
-const uri = 'mongodb+srv://iulianp14:admin@cluster0.gt5aifw.mongodb.net/?retryWrites=true&w=majority';
+const uri = 'mongodb://127.0.0.1:27017';
 
 const fs = require('fs');
 const { catalogPath, getReturnData } = require('./utils');
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
 	serverApi: {
 		version: ServerApiVersion.v1,
@@ -13,8 +12,10 @@ const client = new MongoClient(uri, {
 	}
 });
 
-const sqlSelectRegex = /^SELECT\s+(DISTINCT\s+)?(.+)\s+FROM\s+(.+)\s+WHERE\s+(.+)$/i;
+const sqlSelectRegex =
+	/^SELECT\s+(DISTINCT\s+)?(.+?)\s+FROM\s+(\w+)((?:\s+INNER\s+JOIN\s+\w+\s+ON\s+\w+\.\w+\s*=\s*\w+\.\w+)+)?(?:\s+WHERE\s+(.+))?\s*$/i;
 const conditionRegex = /\s+AND\s+/i;
+const joinRegex = /\s+INNER\s+JOIN\s+/i;
 
 const getQueryData = (req, res) => {
 	const dbName = req.query?.dbName;
@@ -34,7 +35,10 @@ const getQueryData = (req, res) => {
 					const isDistinct = match[1] ? match[1].trim() : ''; // Check if DISTINCT is present
 					const selectedColumns = match[2].split(',').map((column) => column.trim());
 					const tableName = match[3].trim();
-					const conditions = match[4].split(conditionRegex).map((condition) => condition.trim());
+					const joins = match[4] ? match[4].split(joinRegex).slice(1) : []; // Extract join clauses
+					const conditions = match[5]
+						? match[5].split(conditionRegex).map((condition) => condition.trim())
+						: [];
 
 					const table = catalog.databases
 						.find((el) => el.name === dbName)
@@ -53,6 +57,16 @@ const getQueryData = (req, res) => {
 								// start timer
 								const startTime = performance.now();
 
+								// check joins
+								let rez = [];
+								for (const join of joins) {
+									const [tb1, col1, tb2, col2] = join.split(' ')[2].split(/[.=]/);
+									const joinResult = await sortMergeJoin(catalog, dbName, tb1, col1, tb2, col2, rez);
+									rez = joinResult;
+									console.log(rez);
+								}
+
+								// check conditions
 								let filtered = [];
 								result.forEach((elem) => {
 									const val = elem.value.split('#');
@@ -109,6 +123,7 @@ const getQueryData = (req, res) => {
 										return res.status(400).send(error);
 									}
 									if (ok) {
+										// check selected columns
 										if (selectedColumns[0] === '*') {
 											filtered.push(elem);
 										} else {
@@ -149,6 +164,8 @@ const getQueryData = (req, res) => {
 						} else {
 							// INDEX TIME
 							const times = [];
+
+							// check conditions
 							let mappedResults = '';
 							let noIndexConditions = [];
 							for (const condition of conditions) {
@@ -242,6 +259,7 @@ const getQueryData = (req, res) => {
 										resultConditions = result;
 									}
 
+									// check selected columns
 									for (const elem of resultConditions) {
 										if (selectedColumns[0] === '*') {
 											filtered.push(elem);
@@ -464,6 +482,107 @@ function applyNoIndexConditions(elements, conditions, table) {
 		}
 		return ok;
 	});
+}
+
+// Function to perform Sort-Merge Join
+async function sortMergeJoin(catalog, dbName, table1, column1, table2, column2, inputResult) {
+	try {
+		await client.connect();
+		const db = client.db(dbName);
+
+		const isFirstJoin = inputResult.length === 0;
+
+		// Fetch data for table1 from MongoDB if we don't have input result
+		const table1Data = isFirstJoin ? await db.collection(table1).find().toArray() : inputResult;
+
+		let table2Data = [];
+		if (column2) {
+			// Fetch data for table2 from MongoDB only if column2 is defined
+			table2Data = await db.collection(table2).find().toArray();
+		}
+
+		const col1Index = catalog.databases
+			.find((el) => el.name === dbName)
+			.tables.find((el) => el.name === table1)
+			.columns.findIndex((col) => col.name === column1);
+		const col2Index = catalog.databases
+			.find((el) => el.name === dbName)
+			.tables.find((el) => el.name === table2)
+			.columns.findIndex((col) => col.name === column2);
+
+		if (table1Data.length > 0 && table2Data.length > 0 && col1Index >= 0 && col2Index >= 0) {
+			// Sort both tables based on the join key
+			const sortedTable1 = table1Data.sort((a, b) => {
+				const col = isFirstJoin
+					? col1Index === 0
+						? '_id'
+						: 'value'
+					: col1Index === 0
+					? `${table1}._id`
+					: `${table1}.value`;
+				col1Index === 0 ? a[col] - b[col] : a[col].split('#')[col1Index - 1] - b[col].split('#')[col1Index - 1];
+			});
+			const sortedTable2 = table2Data.sort((a, b) =>
+				col2Index === 0 ? a._id - b._id : a.value.split('#')[col2Index - 1] - b.value.split('#')[col2Index - 1]
+			);
+
+			const result = [];
+
+			let i = 0;
+			let j = 0;
+
+			while (i < sortedTable1.length && j < sortedTable2.length) {
+				const row1 = sortedTable1[i];
+				const row2 = sortedTable2[j];
+
+				const col = isFirstJoin
+					? col1Index === 0
+						? '_id'
+						: 'value'
+					: col1Index === 0
+					? `${table1}._id`
+					: `${table1}.value`;
+				const row1Value = col1Index === 0 ? row1[col] : row1[col].split('#')[col1Index - 1];
+				const row2Value = col2Index === 0 ? row2._id : row2.value.split('#')[col2Index - 1];
+
+				if (row1Value === row2Value) {
+					// Perform the join
+					const joinedRow = {};
+
+					// Add fields from table1 with a prefix
+					for (const key in row1) {
+						if (isFirstJoin) {
+							joinedRow[`${table1}.${key}`] = row1[key];
+						} else {
+							joinedRow[key] = row1[key];
+						}
+					}
+
+					// Add fields from table2 with a prefix
+					for (const key in row2) {
+						joinedRow[`${table2}.${key}`] = row2[key];
+					}
+
+					result.push(joinedRow);
+
+					// Move to the next row in table1
+					i++;
+				} else if (row1Value < row2Value) {
+					// Move to the next row in table1
+					i++;
+				} else {
+					// Move to the next row in table2
+					j++;
+				}
+			}
+
+			return result;
+		}
+
+		return [];
+	} finally {
+		await client.close();
+	}
 }
 
 module.exports = {

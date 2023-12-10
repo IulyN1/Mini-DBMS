@@ -58,15 +58,28 @@ const transformTableData = (tableData, primaryKey) => {
 	return [key, value];
 };
 
-const getReturnData = (data) => {
+const getReturnData = (data, hasJoins) => {
 	let returnData = [];
 	if (data) {
-		data.forEach((el) => {
-			const key = el['_id'];
-			const value = el['value'];
-			const parsed = { [key]: value };
-			returnData.push(parsed);
-		});
+		if (hasJoins) {
+			data.forEach((el) => {
+				const [_, firstValue] = Object.entries(el)[0];
+				const restValues = Object.entries(el)
+					.slice(1)
+					.map(([_, value]) => value)
+					.filter((value) => value !== '')
+					.join('#');
+				const result = { [firstValue]: restValues ? `${restValues}` : '' };
+				returnData.push(result);
+			});
+		} else {
+			data.forEach((el) => {
+				const key = el['_id'];
+				const value = el['value'];
+				const parsed = { [key]: value };
+				returnData.push(parsed);
+			});
+		}
 	}
 	return returnData;
 };

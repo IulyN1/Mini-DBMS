@@ -19,3 +19,8 @@ The structure of the tables, primary key constraints, and foreign key constraint
 -   Update data
 
 -   Delete data
+
+-   Query data
+    -- Select
+    -- Join
+    -- Group By

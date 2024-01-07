@@ -13,7 +13,7 @@ const client = new MongoClient(uri, {
 });
 
 const sqlSelectRegex =
-	/^SELECT\s+(DISTINCT\s+)?(.+?)\s+FROM\s+(\w+)((?:\s+INNER\s+JOIN\s+\w+\s+ON\s+\w+\.\w+\s*=\s*\w+\.\w+)+)?(?:\s+WHERE\s+(.+))?\s*$/i;
+	/^SELECT\s+(DISTINCT\s+)?(.+?)\s+FROM\s+(\w+)((?:\s+INNER\s+JOIN\s+\w+\s+ON\s+\w+\.\w+\s*=\s*\w+\.\w+)+)?(?:\s+WHERE\s+(.+))?(?:\s+GROUP\s+BY\s+([\w,]+)\s*(?:\s+HAVING\s+(.+))?)?\s*$/i;
 const conditionRegex = /\s+AND\s+/i;
 const joinRegex = /\s+INNER\s+JOIN\s+/i;
 
@@ -39,6 +39,8 @@ const getQueryData = (req, res) => {
 					const conditions = match[5]
 						? match[5].split(conditionRegex).map((condition) => condition.trim())
 						: [];
+					const groupByColumns = match[6] ? match[6].split(',').map((column) => column.trim()) : [];
+					const havingCondition = match[7] ? match[7].trim() : '';
 
 					const table = catalog.databases
 						.find((el) => el.name === dbName)
@@ -61,10 +63,25 @@ const getQueryData = (req, res) => {
 								let rez = [];
 								for (const join of joins) {
 									const [tb1, col1, tb2, col2] = join.split(' ')[2].split(/[.=]/);
+									// Select join strategy
 									const joinResult = await sortMergeJoin(catalog, dbName, tb1, col1, tb2, col2, rez);
 									//const joinResult = await hashJoin(catalog, dbName, tb1, col1, tb2, col2, rez);
 									//const joinResult = await indexLoopJoin(catalog, dbName, tb1, col1, tb2, col2, rez);
 									rez = joinResult;
+								}
+
+								// check group by
+								let groupedResults = [];
+								if (groupByColumns.length > 0) {
+									const records = groupAndFilter(
+										rez.length > 0 ? rez : result,
+										groupByColumns,
+										havingCondition,
+										catalog,
+										dbName,
+										tableName
+									);
+									groupedResults = records;
 								}
 
 								// check conditions
@@ -145,7 +162,8 @@ const getQueryData = (req, res) => {
 										}
 									});
 								} else {
-									result.forEach((elem) => {
+									const elems = groupedResults.length > 0 ? groupedResults : result;
+									elems.forEach((elem) => {
 										const val = elem.value.split('#');
 										let ok = true;
 										let error = '';
@@ -200,23 +218,46 @@ const getQueryData = (req, res) => {
 											return res.status(400).send(error);
 										}
 										if (ok) {
-											// check selected columns
+											// Check selected columns
 											if (selectedColumns[0] === '*') {
 												filtered.push(elem);
 											} else {
 												let editedElem = { _id: '', value: '' };
-												const val = elem.value.split('#');
 												selectedColumns.forEach((column) => {
-													const index = table.columns?.findIndex(
-														(col) => col.name === column
-													);
-													if (!editedElem._id) {
-														editedElem._id = index === 0 ? elem._id : val[index - 1];
+													const aggregationMatch = column.match(/^(COUNT|SUM|AVG)\((\w+)\)$/);
+
+													if (aggregationMatch) {
+														const [, operator, columnName] = aggregationMatch;
+														const aggregationResult = performAggregation(
+															elems,
+															table,
+															columnName,
+															operator
+														);
+
+														if (!editedElem._id) {
+															editedElem._id = aggregationResult.toString();
+														} else {
+															editedElem.value += aggregationResult.toString() + '#';
+														}
 													} else {
-														editedElem.value += index === 0 ? elem._id : val[index - 1];
-														editedElem.value += '#';
+														const index = table.columns?.findIndex(
+															(col) => col.name === column
+														);
+
+														if (index !== -1) {
+															if (!editedElem._id) {
+																editedElem._id =
+																	index === 0 ? elem._id : val[index - 1];
+															} else {
+																editedElem.value +=
+																	index === 0 ? elem._id : val[index - 1];
+																editedElem.value += '#';
+															}
+														}
 													}
 												});
+
 												editedElem.value = editedElem.value.slice(0, -1);
 												filtered.push(editedElem);
 											}
@@ -252,6 +293,7 @@ const getQueryData = (req, res) => {
 							let rez = [];
 							for (const join of joins) {
 								const [tb1, col1, tb2, col2] = join.split(' ')[2].split(/[.=]/);
+								// Select join strategy
 								const joinResult = await sortMergeJoin(catalog, dbName, tb1, col1, tb2, col2, rez);
 								//const joinResult = await hashJoin(catalog, dbName, tb1, col1, tb2, col2, rez);
 								//const joinResult = await indexLoopJoin(catalog, dbName, tb1, col1, tb2, col2, rez);
@@ -947,6 +989,139 @@ async function indexLoopJoin(catalog, dbName, table1, column1, table2, column2, 
 		return [];
 	} finally {
 		await client.close();
+	}
+}
+
+// Helper function for HAVING condition
+function havingFilter(record, havingCondition, catalog, dbName, tableName) {
+	if (!havingCondition) {
+		return true; // No condition, always true
+	}
+
+	const tableColumns = catalog.databases
+		.find((db) => db.name === dbName)
+		.tables.find((table) => table.name === tableName).columns;
+
+	const conditionParts = havingCondition.match(/\b(\w+)\s*([<>])?\s*(\w+)\b/);
+
+	if (conditionParts) {
+		const [, column, operator, value] = conditionParts;
+
+		const columnIndex = tableColumns.findIndex((col) => col.name === column);
+
+		if (columnIndex !== -1) {
+			const columnValue = columnIndex === 0 ? record['_id'] : record['value'].split('#')[columnIndex - 1];
+
+			if (operator) {
+				// Evaluate the condition for the record
+				const colValue = parseInt(columnValue);
+				const val = parseInt(value);
+				switch (operator) {
+					case '<':
+						return colValue < val;
+					case '>':
+						return colValue > val;
+					case '=':
+						return columnValue == value; // Note: Loose equality for simplicity
+					default:
+						return false;
+				}
+			} else {
+				// If no operator, treat it as equality
+				return columnValue == value;
+			}
+		}
+	}
+
+	return false; // Invalid condition format or column not found
+}
+
+// Function to perform GROUP BY and HAVING
+function groupAndFilter(records, groupByColumns, havingCondition, catalog, dbName, tableName) {
+	const groupedData = {};
+
+	// Find the specified table in the catalog
+	const table = catalog.databases.find((db) => db.name === dbName).tables.find((table) => table.name === tableName);
+
+	// Extract columns from the table
+	const tableColumns = table ? table.columns : [];
+
+	// Group records based on groupByColumns
+	records.forEach((record) => {
+		const key = groupByColumns
+			.map((col) => {
+				// Find the index of the specified column
+				const columnIndex = tableColumns.findIndex((tableCol) => tableCol.name === col);
+
+				if (columnIndex !== -1) {
+					// Access the corresponding values based on the column index
+					return columnIndex === 0 ? record['_id'] : record['value'].split('#')[columnIndex - 1];
+				} else {
+					console.error(`Column '${col}' not found in the table.`);
+					return null;
+				}
+			})
+			.join('#');
+
+		if (!groupedData[key]) {
+			groupedData[key] = [];
+		}
+		groupedData[key].push(record);
+	});
+
+	// Apply havingCondition filter
+	const filteredGroups = Object.keys(groupedData).filter((key) => {
+		const groupRecords = groupedData[key];
+		return groupRecords.some((record) => havingFilter(record, havingCondition, catalog, dbName, tableName));
+	});
+
+	// Convert back to a flat list if needed
+	const result = filteredGroups.flatMap((key) => groupedData[key]);
+	return result;
+}
+
+// Function to perform aggregation
+function performAggregation(records, table, columnName, operator) {
+	const columnIndex = table.columns.findIndex((col) => col.name === columnName);
+
+	switch (operator) {
+		case 'COUNT':
+			// Count unique occurrences of values for the specified column
+			const uniqueValues = new Set();
+
+			records.forEach((elem) => {
+				const valueArray = elem['value'].split('#');
+				const value = columnIndex === 0 ? elem['_id'] : valueArray[columnIndex - 1];
+
+				if (value !== undefined && value !== null) {
+					uniqueValues.add(value);
+				}
+			});
+
+			// Return the count of unique values
+			return uniqueValues.size;
+
+		case 'SUM':
+			// Sum the values for the specified column
+			const sum = records.reduce((total, elem) => {
+				const valueArray = elem['value'].split('#');
+				const value = columnIndex === 0 ? parseFloat(elem['_id']) : parseFloat(valueArray[columnIndex - 1]);
+				return total + (isNaN(value) ? 0 : value);
+			}, 0);
+			return sum;
+
+		case 'AVG':
+			// Calculate the average for the specified column
+			const avg =
+				records.reduce((total, elem) => {
+					const valueArray = elem['value'].split('#');
+					const value = columnIndex === 0 ? parseFloat(elem['_id']) : parseFloat(valueArray[columnIndex - 1]);
+					return total + (isNaN(value) ? 0 : value);
+				}, 0) / records.length;
+			return avg;
+
+		default:
+			return null;
 	}
 }
 

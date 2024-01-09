@@ -1070,13 +1070,16 @@ function groupAndFilter(records, groupByColumns, havingCondition, catalog, dbNam
 	});
 
 	// Apply havingCondition filter
-	const filteredGroups = Object.keys(groupedData).filter((key) => {
-		const groupRecords = groupedData[key];
-		return groupRecords.some((record) => havingFilter(record, havingCondition, catalog, dbName, tableName));
-	});
+	const result = Object.keys(groupedData)
+		.map((key) => {
+			const groupRecords = groupedData[key];
+			const firstRecord = groupRecords.find((record) =>
+				havingFilter(record, havingCondition, catalog, dbName, tableName)
+			);
+			return firstRecord;
+		})
+		.filter((record) => record !== undefined); // Remove undefined records
 
-	// Convert back to a flat list if needed
-	const result = filteredGroups.flatMap((key) => groupedData[key]);
 	return result;
 }
 
